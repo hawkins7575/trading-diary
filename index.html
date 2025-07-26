@@ -140,7 +140,7 @@
             const [activeTab, setActiveTab] = useState('dashboard');
             const [chartPeriod, setChartPeriod] = useState('daily');
             
-            // 로그인 관련
+            // 로그인 관련 (옵션)
             const [showLoginModal, setShowLoginModal] = useState(false);
             const [isLoggedIn, setIsLoggedIn] = useState(() => {
                 const saved = localStorage.getItem('trading-diary-auth');
@@ -930,11 +930,11 @@
                                 key: 'title',
                                 className: 'text-2xl font-bold mb-2',
                                 style: { color: 'var(--foreground)' }
-                            }, isSignUp ? '회원가입' : '로그인'),
+                            }, isSignUp ? '클라우드 계정 만들기' : '클라우드 동기화'),
                             React.createElement('p', {
                                 key: 'subtitle',
                                 className: 'text-gray-600'
-                            }, isSignUp ? '새 계정을 만들어보세요' : '계정에 로그인하세요')
+                            }, isSignUp ? '어디서든 데이터에 접근하려면 계정을 만들어주세요' : '다른 기기에서도 데이터를 보려면 로그인하세요')
                         ]),
                         
                         React.createElement('form', {
@@ -996,7 +996,7 @@
                                 type: 'submit',
                                 className: 'w-full py-3 px-4 text-white font-medium rounded-lg transition-colors',
                                 style: { backgroundColor: 'var(--primary)' }
-                            }, isSignUp ? '계정 만들기' : '로그인'),
+                            }, isSignUp ? '클라우드 계정 만들기' : '동기화 시작'),
                             React.createElement('div', {
                                 key: 'toggle',
                                 className: 'text-center pt-4'
@@ -2554,6 +2554,30 @@
                         ]),
 
                         React.createElement('div', {
+                            key: 'usage-guide',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h2', {
+                                className: 'text-xl font-semibold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, '💡 사용법 안내'),
+                            React.createElement('div', { className: 'space-y-4 text-sm' }, [
+                                React.createElement('div', { key: 'local-usage' }, [
+                                    React.createElement('h3', { className: 'font-medium text-green-600' }, '🏠 로컬 사용 (기본)'),
+                                    React.createElement('p', { className: 'text-gray-600' }, '• 로그인 없이 바로 사용 가능합니다'),
+                                    React.createElement('p', { className: 'text-gray-600' }, '• 모든 데이터는 현재 브라우저에 안전하게 저장됩니다'),
+                                    React.createElement('p', { className: 'text-gray-600' }, '• 개인정보 걱정 없이 완전히 프라이빗하게 사용')
+                                ]),
+                                React.createElement('div', { key: 'cloud-sync' }, [
+                                    React.createElement('h3', { className: 'font-medium text-blue-600' }, '☁️ 클라우드 동기화 (선택)'),
+                                    React.createElement('p', { className: 'text-gray-600' }, '• 다른 기기에서도 데이터를 보고 싶다면 계정을 만드세요'),
+                                    React.createElement('p', { className: 'text-gray-600' }, '• 휴대폰, 태블릿, 다른 컴퓨터에서 동일한 데이터 접근'),
+                                    React.createElement('p', { className: 'text-gray-600' }, '• 데이터 백업 및 복구 기능')
+                                ])
+                            ])
+                        ]),
+
+                        React.createElement('div', {
                             key: 'contact',
                             className: 'metric-card p-6'
                         }, [
@@ -2566,7 +2590,7 @@
                             }, '기능 개선 요청이나 버그 신고가 있으시면 언제든 연락주세요.'),
                             React.createElement('div', { className: 'text-sm' }, [
                                 React.createElement('p', { key: 'version', className: 'text-gray-500' }, '버전: 1.0.0'),
-                                React.createElement('p', { key: 'updated', className: 'text-gray-500' }, '최종 업데이트: 2024년 12월')
+                                React.createElement('p', { key: 'updated', className: 'text-gray-500' }, '최종 업데이트: 2025년 1월')
                             ])
                         ]),
 
@@ -2684,10 +2708,17 @@
                                 className: 'w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border rounded-lg hover:bg-gray-50 transition-colors'
                             }, '로그아웃')
                         ]) :
-                        React.createElement('button', {
-                            onClick: () => setShowLoginModal(true),
-                            className: 'w-full btn-primary'
-                        }, '로그인')
+                        React.createElement('div', { key: 'cloud-sync', className: 'space-y-2' }, [
+                            React.createElement('button', {
+                                key: 'sync-btn',
+                                onClick: () => setShowLoginModal(true),
+                                className: 'w-full btn-primary text-sm'
+                            }, '☁️ 클라우드 동기화'),
+                            React.createElement('p', {
+                                key: 'local-info',
+                                className: 'text-xs text-gray-500 text-center'
+                            }, '로그인 없이도 사용 가능\n(데이터는 현재 브라우저에 저장)')
+                        ])
                     )
                 ]),
                 
