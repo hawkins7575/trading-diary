@@ -1668,14 +1668,17 @@
                     }, [
                         React.createElement('div', {
                             key: 'modal',
-                            className: 'bg-white rounded-2xl p-6 w-full max-w-md mx-4'
+                            className: 'bg-white rounded-2xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col'
                         }, [
                             React.createElement('h3', {
                                 key: 'title',
-                                className: 'text-lg font-semibold mb-4',
+                                className: 'text-lg font-semibold mb-4 px-6 pt-6 flex-shrink-0',
                                 style: { color: 'var(--foreground)' }
                             }, editingTrade ? '거래 수정' : '거래 추가'),
-                            React.createElement('div', { key: 'form', className: 'space-y-4' }, [
+                            React.createElement('div', { 
+                                key: 'form', 
+                                className: 'space-y-4 px-6 overflow-y-auto flex-1'
+                            }, [
                                 React.createElement('div', { key: 'date-field' }, [
                                     React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '날짜'),
                                     React.createElement('input', {
@@ -1832,7 +1835,7 @@
                                     ])
                                 ])
                             ]),
-                            React.createElement('div', { key: 'buttons', className: 'flex gap-3 mt-6' }, [
+                            React.createElement('div', { key: 'buttons', className: 'flex gap-3 p-6 border-t bg-gray-50 flex-shrink-0' }, [
                                 React.createElement('button', {
                                     key: 'cancel',
                                     onClick: () => {
