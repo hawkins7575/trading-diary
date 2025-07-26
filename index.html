@@ -7,6 +7,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/convex@1.16.2/dist/browser.mjs" type="module"></script>
     <script>
         // Recharts 로딩 확인
         window.addEventListener('load', function() {
@@ -81,7 +82,16 @@
 <body>
     <div id="root"></div>
     
-    <script>
+    <script type="module">
+        import { ConvexHttpClient } from "https://unpkg.com/convex@1.16.2/dist/browser.mjs";
+        
+        // Convex 클라이언트 초기화
+        const CONVEX_URL = "https://magical-jackal-947.convex.cloud"; // 실제 Convex URL로 교체 필요
+        const convex = new ConvexHttpClient(CONVEX_URL);
+        
+        // 전역으로 사용할 수 있도록 설정
+        window.convex = convex;
+        
         const { useState, useEffect } = React;
         
         function CoinTradingApp() {
@@ -333,8 +343,27 @@
                 return data;
             };
             
+            // Convex 데이터 로딩 함수
+            const loadUserDataFromConvex = async (userId) => {
+                try {
+                    const [userTrades, userJournals, userStrategies, userGoals] = await Promise.all([
+                        window.convex.query("trades:getUserTrades", { userId }),
+                        window.convex.query("journals:getUserJournals", { userId }),
+                        window.convex.query("strategies:getUserStrategies", { userId }),
+                        window.convex.query("goals:getUserGoals", { userId })
+                    ]);
+                    
+                    setTrades(userTrades || []);
+                    setJournals(userJournals || []);
+                    setStrategies(userStrategies || []);
+                    setGoals(userGoals || []);
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                }
+            };
+
             // 핸들러 함수들
-            const handleLogin = (event) => {
+            const handleLogin = async (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 const email = formData.get('email');
@@ -345,28 +374,43 @@
                     return;
                 }
                 
-                if (email && password.length >= 6) {
-                    const userData = {
-                        name: email.split('@')[0],
-                        email: email,
-                        avatar: '👤'
-                    };
-                    setUser(userData);
-                    setIsLoggedIn(true);
-                    setShowLoginModal(false);
-                    setError('');
+                try {
+                    // Convex를 통한 로그인 시도
+                    const result = await window.convex.mutation("auth:signIn", { 
+                        email, 
+                        password 
+                    });
                     
-                    // localStorage에 로그인 상태 저장
-                    localStorage.setItem('trading-diary-auth', JSON.stringify({
-                        isLoggedIn: true,
-                        user: userData
-                    }));
-                } else {
-                    setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
+                    if (result.success) {
+                        const userData = {
+                            id: result.user._id,
+                            name: result.user.name,
+                            email: result.user.email,
+                            avatar: '👤'
+                        };
+                        setUser(userData);
+                        setIsLoggedIn(true);
+                        setShowLoginModal(false);
+                        setError('');
+                        
+                        // localStorage에 로그인 상태 저장
+                        localStorage.setItem('trading-diary-auth', JSON.stringify({
+                            isLoggedIn: true,
+                            user: userData
+                        }));
+                        
+                        // Convex에서 사용자 데이터 불러오기
+                        await loadUserDataFromConvex(userData.id);
+                    } else {
+                        setError(result.error || '로그인에 실패했습니다.');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    setError('로그인 중 오류가 발생했습니다.');
                 }
             };
             
-            const handleSignup = (event) => {
+            const handleSignup = async (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 const email = formData.get('email');
@@ -383,26 +427,50 @@
                     return;
                 }
                 
-                if (email && password.length >= 6) {
-                    const userData = {
-                        name: email.split('@')[0],
-                        email: email,
-                        avatar: '👤'
-                    };
-                    setUser(userData);
-                    setIsLoggedIn(true);
-                    setShowLoginModal(false);
-                    setError('');
+                if (password.length < 6) {
+                    setError('비밀번호는 6자 이상이어야 합니다.');
+                    return;
+                }
+                
+                try {
+                    // Convex를 통한 회원가입
+                    const result = await window.convex.mutation("auth:signUp", { 
+                        email, 
+                        password,
+                        name: email.split('@')[0]
+                    });
                     
-                    // localStorage에 로그인 상태 저장
-                    localStorage.setItem('trading-diary-auth', JSON.stringify({
-                        isLoggedIn: true,
-                        user: userData
-                    }));
-                    
-                    alert('회원가입이 완료되었습니다!');
-                } else {
-                    setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
+                    if (result.success) {
+                        const userData = {
+                            id: result.user._id,
+                            name: result.user.name,
+                            email: result.user.email,
+                            avatar: '👤'
+                        };
+                        setUser(userData);
+                        setIsLoggedIn(true);
+                        setShowLoginModal(false);
+                        setError('');
+                        
+                        // localStorage에 로그인 상태 저장
+                        localStorage.setItem('trading-diary-auth', JSON.stringify({
+                            isLoggedIn: true,
+                            user: userData
+                        }));
+                        
+                        alert('회원가입이 완료되었습니다!');
+                        
+                        // 새 사용자는 빈 데이터로 시작
+                        setTrades([]);
+                        setJournals([]);
+                        setStrategies([]);
+                        setGoals([]);
+                    } else {
+                        setError(result.error || '회원가입에 실패했습니다.');
+                    }
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    setError('회원가입 중 오류가 발생했습니다.');
                 }
             };
 
@@ -414,7 +482,12 @@
                 localStorage.removeItem('trading-diary-auth');
             };
             
-            const handleSaveTrade = () => {
+            const handleSaveTrade = async () => {
+                if (!user?.id) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                }
+                
                 const entry = parseFloat(currentTrade.entry) || 0;
                 const withdrawal = parseFloat(currentTrade.withdrawal) || 0;
                 const balance = parseFloat(currentTrade.balance) || 0;
@@ -428,25 +501,46 @@
                 const prevBalance = prevTrade ? prevTrade.balance : 1000000;
                 const profit = balance - prevBalance - entry + withdrawal;
                 
-                const newTrade = {
-                    ...currentTrade,
-                    id: editingTrade?.id || Date.now(),
-                    entry, withdrawal, balance,
-                    profit: parseFloat(profit.toFixed(2))
+                const tradeData = {
+                    date: currentTrade.date,
+                    entry, 
+                    withdrawal, 
+                    balance,
+                    profit: parseFloat(profit.toFixed(2)),
+                    memo: currentTrade.memo || ''
                 };
                 
-                if (editingTrade) {
-                    setTrades(prev => prev.map(t => t.id === editingTrade.id ? newTrade : t));
-                } else {
-                    setTrades(prev => [...prev, newTrade].sort((a, b) => new Date(a.date) - new Date(b.date)));
+                try {
+                    if (editingTrade) {
+                        // 수정
+                        await window.convex.mutation("trades:updateTrade", {
+                            id: editingTrade._id,
+                            ...tradeData
+                        });
+                        setTrades(prev => prev.map(t => 
+                            t._id === editingTrade._id 
+                                ? { ...editingTrade, ...tradeData }
+                                : t
+                        ));
+                    } else {
+                        // 새 거래 추가
+                        const newTrade = await window.convex.mutation("trades:createTrade", {
+                            userId: user.id,
+                            ...tradeData
+                        });
+                        setTrades(prev => [...prev, newTrade].sort((a, b) => new Date(a.date) - new Date(b.date)));
+                    }
+                    
+                    setCurrentTrade({
+                        date: new Date().toISOString().split('T')[0],
+                        entry: '', withdrawal: '', balance: '', memo: ''
+                    });
+                    setEditingTrade(null);
+                    setShowTradeForm(false);
+                } catch (error) {
+                    console.error('Error saving trade:', error);
+                    alert('거래 저장 중 오류가 발생했습니다.');
                 }
-                
-                setCurrentTrade({
-                    date: new Date().toISOString().split('T')[0],
-                    entry: '', withdrawal: '', balance: '', memo: ''
-                });
-                setEditingTrade(null);
-                setShowTradeForm(false);
             };
             
             const handleEditTrade = (trade) => {

@@ -31,6 +31,13 @@ export default defineSchema({
     userId: v.id("users"),
     date: v.string(),
     content: v.string(),
+    mood: v.optional(v.union(
+      v.literal("excellent"), 
+      v.literal("good"), 
+      v.literal("neutral"), 
+      v.literal("bad"), 
+      v.literal("terrible")
+    )),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -41,9 +48,16 @@ export default defineSchema({
   strategies: defineTable({
     userId: v.id("users"),
     name: v.string(),
-    description: v.string(),
-    rules: v.string(),
+    description: v.optional(v.string()),
+    buyCriteria: v.optional(v.string()),
+    sellCriteria: v.optional(v.string()),
+    moneyManagement: v.optional(v.string()),
+    stopLoss: v.optional(v.string()),
+    technicalIndicators: v.optional(v.string()),
     riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    timeframe: v.optional(v.string()),
+    targetReturn: v.optional(v.string()),
+    maxDrawdown: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),

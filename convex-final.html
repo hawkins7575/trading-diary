@@ -17,7 +17,6 @@
         });
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/convex@1.25.4/browser/convex.js"></script>
     <style>
         :root {
           --background: #f5f7fa;
@@ -85,34 +84,17 @@
     <script>
         const { useState, useEffect } = React;
         
-        // Convex 클라이언트 초기화
-        const convex = new window.Convex.ConvexReactClient("https://opulent-dragon-4.convex.cloud");
-        
         function CoinTradingApp() {
             // 기본 상태
             const [activeTab, setActiveTab] = useState('dashboard');
             const [chartPeriod, setChartPeriod] = useState('weekly');
             
-            // Convex 로그인 관련
+            // 로그인 관련
             const [showLoginModal, setShowLoginModal] = useState(false);
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [user, setUser] = useState(null);
             const [isSignUp, setIsSignUp] = useState(false);
             const [error, setError] = useState('');
-            const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '' });
-            const [convexConnected, setConvexConnected] = useState(false);
-            
-            // Convex 연결 확인
-            useEffect(() => {
-                try {
-                    if (convex && window.Convex) {
-                        setConvexConnected(true);
-                        console.log('Convex connected successfully');
-                    }
-                } catch (error) {
-                    console.log('Convex connection failed, using local storage');
-                }
-            }, []);
             
             // 거래내역 관련
             const [showTradeForm, setShowTradeForm] = useState(false);
@@ -253,7 +235,7 @@
             };
             
             // 핸들러 함수들
-            const handleLogin = async (event) => {
+            const handleLogin = (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 const email = formData.get('email');
@@ -264,87 +246,20 @@
                     return;
                 }
                 
-                try {
-                    // Convex 로그인 시도
-                    const result = await convex.mutation('auth:signIn', { email, password });
-                    if (result && result.success) {
-                        setUser({
-                            id: result.user._id,
-                            name: result.user.name,
-                            email: result.user.email,
-                            avatar: '👤'
-                        });
-                        setIsLoggedIn(true);
-                        setShowLoginModal(false);
-                        setError('');
-                    } else {
-                        setError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    // Convex 실패 시 임시 로그인 (개발용)
-                    if (email && password.length >= 6) {
-                        setUser({
-                            name: email.split('@')[0],
-                            email: email,
-                            avatar: '👤'
-                        });
-                        setIsLoggedIn(true);
-                        setShowLoginModal(false);
-                        setError('');
-                    } else {
-                        setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
-                    }
-                }
-            };
-            
-            const handleSignUp = async (event) => {
-                event.preventDefault();
-                const formData = new FormData(event.target);
-                const name = formData.get('name');
-                const email = formData.get('email');
-                const password = formData.get('password');
-                
-                if (!name || !email || !password) {
-                    setError('모든 필드를 입력해주세요.');
-                    return;
-                }
-                
-                if (password.length < 6) {
-                    setError('비밀번호는 6자 이상이어야 합니다.');
-                    return;
-                }
-                
-                try {
-                    // Convex 회원가입 시도
-                    const result = await convex.mutation('auth:signUp', { name, email, password });
-                    if (result && result.success) {
-                        setUser({
-                            id: result.user._id,
-                            name: result.user.name,
-                            email: result.user.email,
-                            avatar: '👤'
-                        });
-                        setIsLoggedIn(true);
-                        setShowLoginModal(false);
-                        setError('');
-                    } else {
-                        setError('회원가입에 실패했습니다. 다른 이메일을 사용해보세요.');
-                    }
-                } catch (error) {
-                    console.error('SignUp error:', error);
-                    // Convex 실패 시 임시 회원가입 (개발용)
+                if (email && password.length >= 6) {
                     setUser({
-                        name: name,
+                        name: email.split('@')[0],
                         email: email,
                         avatar: '👤'
                     });
                     setIsLoggedIn(true);
                     setShowLoginModal(false);
                     setError('');
+                } else {
+                    setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
                 }
             };
-
+            
             const handleLogout = () => {
                 setIsLoggedIn(false);
                 setUser(null);
@@ -563,25 +478,9 @@
                         
                         React.createElement('form', {
                             key: 'form',
-                            onSubmit: isSignUp ? handleSignUp : handleLogin,
+                            onSubmit: handleLogin,
                             className: 'space-y-4'
                         }, [
-                            // 회원가입 시에만 이름 필드 표시
-                            isSignUp && React.createElement('div', { key: 'name-field', className: 'space-y-2' }, [
-                                React.createElement('label', {
-                                    key: 'label',
-                                    className: 'block text-sm font-medium',
-                                    style: { color: 'var(--foreground)' }
-                                }, '이름'),
-                                React.createElement('input', {
-                                    key: 'input',
-                                    type: 'text',
-                                    name: 'name',
-                                    required: true,
-                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
-                                    placeholder: '이름을 입력하세요'
-                                })
-                            ]),
                             React.createElement('div', { key: 'email-field', className: 'space-y-2' }, [
                                 React.createElement('label', {
                                     key: 'label',
@@ -662,20 +561,7 @@
                         }, '대시보드'),
                         React.createElement('p', { 
                             className: 'text-gray-600'
-                        }, '투자 현황을 한눈에 확인하세요'),
-                        // Convex 연결 상태 표시
-                        React.createElement('div', {
-                            key: 'convex-status',
-                            className: `mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm ${convexConnected ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`
-                        }, [
-                            React.createElement('span', {
-                                key: 'indicator',
-                                className: `w-2 h-2 rounded-full mr-2 ${convexConnected ? 'bg-green-500' : 'bg-yellow-500'}`
-                            }),
-                            React.createElement('span', {
-                                key: 'text'
-                            }, convexConnected ? 'Convex 데이터베이스 연결됨' : '로컬 저장소 사용 중')
-                        ])
+                        }, '투자 현황을 한눈에 확인하세요')
                     ]),
                     
                     React.createElement('div', {
