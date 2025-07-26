@@ -240,6 +240,7 @@ function App() {
             isLoggedIn={isLoggedIn}
             onLogin={handleLogin}
             onLogout={handleLogout}
+            onNavigate={handleNavigateToLegal}
           />
         )}
         
