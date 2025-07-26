@@ -2902,11 +2902,11 @@
                             React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' }, [
                                 React.createElement('div', { key: 'feature1', className: 'space-y-2' }, [
                                     React.createElement('h3', { className: 'font-medium' }, '📊 대시보드'),
-                                    React.createElement('p', { className: 'text-sm text-gray-600' }, '총 수익, 승률, 최근 거래 등 핵심 지표를 한눈에 확인')
+                                    React.createElement('p', { className: 'text-sm text-gray-600' }, '총 수익, 승률, 패턴 분석 등 핵심 지표와 매매 복기 결과 확인')
                                 ]),
                                 React.createElement('div', { key: 'feature2', className: 'space-y-2' }, [
                                     React.createElement('h3', { className: 'font-medium' }, '💰 거래내역'),
-                                    React.createElement('p', { className: 'text-sm text-gray-600' }, '거래 추가, 수정, 삭제 및 상세 정보 관리')
+                                    React.createElement('p', { className: 'text-sm text-gray-600' }, '거래 추가, 패턴 태그, 체크리스트 및 복기 정보 관리')
                                 ]),
                                 React.createElement('div', { key: 'feature3', className: 'space-y-2' }, [
                                     React.createElement('h3', { className: 'font-medium' }, '📝 매매일지'),
@@ -2928,10 +2928,11 @@
                                 style: { color: 'var(--foreground)' }
                             }, '💡 사용 팁'),
                             React.createElement('div', { className: 'space-y-3 text-sm text-gray-600' }, [
-                                React.createElement('p', { key: 'tip1' }, '• 거래 추가 시 정확한 수수료와 가격을 입력하여 정확한 수익률을 확인하세요'),
+                                React.createElement('p', { key: 'tip1' }, '• 거래 추가 시 체크리스트를 확인하고 패턴 태그를 선택하여 복기 데이터를 축적하세요'),
                                 React.createElement('p', { key: 'tip2' }, '• 매매일지에 거래 이유와 결과를 상세히 기록하여 패턴을 분석하세요'),
-                                React.createElement('p', { key: 'tip3' }, '• 목표설정 메뉴에서 월별/연간 목표를 설정하고 진행상황을 추적하세요'),
-                                React.createElement('p', { key: 'tip4' }, '• 정기적으로 분석 페이지를 확인하여 매매 성과를 점검하세요')
+                                React.createElement('p', { key: 'tip3' }, '• 감정 상태와 확신도를 솔직하게 기록하여 심리적 패턴을 파악하세요'),
+                                React.createElement('p', { key: 'tip4' }, '• 대시보드의 패턴 분석을 정기적으로 확인하여 매매 습관을 개선하세요'),
+                                React.createElement('p', { key: 'tip5' }, '• 성공 패턴은 강화하고 실수 패턴은 점진적으로 줄여나가세요')
                             ])
                         ]),
 
@@ -2956,6 +2957,61 @@
                                     React.createElement('p', { className: 'text-gray-600' }, '• 휴대폰, 태블릿, 다른 컴퓨터에서 동일한 데이터 접근'),
                                     React.createElement('p', { className: 'text-gray-600' }, '• 데이터 백업 및 복구 기능')
                                 ])
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'trading-review',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h2', {
+                                className: 'text-xl font-semibold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, '🎯 매매 복기 기능'),
+                            React.createElement('div', { className: 'space-y-4 text-sm' }, [
+                                React.createElement('div', { key: 'checklist-section' }, [
+                                    React.createElement('h3', { className: 'font-medium text-blue-600 mb-2' }, '📋 매매 체크리스트'),
+                                    React.createElement('div', { className: 'space-y-1 text-gray-600 ml-4' }, [
+                                        React.createElement('p', { key: 'check1' }, '• 손절선 설정: 미리 손실 한도를 정했는가?'),
+                                        React.createElement('p', { key: 'check2' }, '• 포지션 사이즈: 적절한 투자 금액인가?'),
+                                        React.createElement('p', { key: 'check3' }, '• 시장 분석: 차트와 시장 상황을 분석했는가?'),
+                                        React.createElement('p', { key: 'check4' }, '• 뉴스 확인: 관련 뉴스나 이벤트를 확인했는가?'),
+                                        React.createElement('p', { key: 'check5' }, '• 기술적 분석: 지표와 패턴을 분석했는가?'),
+                                        React.createElement('p', { key: 'check6' }, '• 자금 관리: 전체 자금 대비 적절한 비중인가?'),
+                                        React.createElement('p', { key: 'check7' }, '• 감정 상태: 냉정하고 객관적인 상태인가?'),
+                                        React.createElement('p', { key: 'check8' }, '• 목표 수익률: 명확한 목표가 있는가?')
+                                    ])
+                                ]),
+                                React.createElement('div', { key: 'pattern-section' }, [
+                                    React.createElement('h3', { className: 'font-medium text-green-600 mb-2' }, '✅ 성공 패턴 태그'),
+                                    React.createElement('p', { className: 'text-gray-600 ml-4' }, '계획대로 실행, 인내심, 리스크 관리, 적절한 손절, 적절한 익절, 정보 분석, 시장 타이밍')
+                                ]),
+                                React.createElement('div', { key: 'mistake-section' }, [
+                                    React.createElement('h3', { className: 'font-medium text-red-600 mb-2' }, '❌ 실수 패턴 태그'),
+                                    React.createElement('p', { className: 'text-gray-600 ml-4' }, '조급함, 감정 거래, 손절 늦음, 익절 빠름, 과매수, 과매도, 정보 부족, 타이밍 실수')
+                                ]),
+                                React.createElement('div', { key: 'emotion-section' }, [
+                                    React.createElement('h3', { className: 'font-medium text-purple-600 mb-2' }, '🎭 감정 상태 & 확신도'),
+                                    React.createElement('p', { className: 'text-gray-600 ml-4' }, '거래 시 감정 상태(매우 확신~매우 불안)와 확신도(1-10점)를 기록하여 감정과 수익률의 상관관계 분석')
+                                ])
+                            ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'review-usage',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h2', {
+                                className: 'text-xl font-semibold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, '📈 복기 활용법'),
+                            React.createElement('div', { className: 'space-y-3 text-sm text-gray-600' }, [
+                                React.createElement('p', { key: 'step1' }, '1. 💰 거래 추가 시 체크리스트를 꼼꼼히 확인하세요'),
+                                React.createElement('p', { key: 'step2' }, '2. 🏷️ 거래 후 성공/실수 패턴 태그를 선택하세요'),
+                                React.createElement('p', { key: 'step3' }, '3. 😊 거래 시 감정과 확신도를 솔직하게 기록하세요'),
+                                React.createElement('p', { key: 'step4' }, '4. 📊 대시보드에서 패턴 분석 결과를 확인하세요'),
+                                React.createElement('p', { key: 'step5' }, '5. 🔍 성공 패턴은 강화하고 실수 패턴은 개선하세요'),
+                                React.createElement('p', { key: 'step6' }, '6. 📈 체크리스트 준수율과 수익률 상관관계를 분석하세요')
                             ])
                         ]),
 
