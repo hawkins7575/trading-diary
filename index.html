@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Diary - 코인 매매 일지</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -24,425 +26,590 @@
             color: var(--foreground);
         }
         
-        .hero-gradient {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-        }
-        
-        .feature-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .metric-card { 
+            background: var(--card); 
+            border-radius: 8px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
         
         .btn-primary {
             background: var(--primary);
             color: white;
-            padding: 16px 32px;
-            border-radius: 12px;
+            padding: 12px 24px;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
             font-weight: 600;
-            font-size: 18px;
             transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
         }
         
         .btn-primary:hover {
             background: #2d4985;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(58, 91, 160, 0.3);
+            transform: translateY(-1px);
         }
         
         .btn-secondary {
-            background: transparent;
-            color: var(--primary);
-            padding: 14px 28px;
-            border: 2px solid var(--primary);
-            border-radius: 12px;
+            background: var(--secondary);
+            color: var(--foreground);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
             transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
         }
         
         .btn-secondary:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-2px);
+            background: #f0b85a;
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
-    <!-- 헤더 -->
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold" style="color: var(--primary);">📊 Trading Diary</h1>
-                </div>
-                <nav class="hidden md:flex space-x-8">
-                    <a href="#features" class="text-gray-600 hover:text-gray-900 font-medium">기능</a>
-                    <a href="#demo" class="text-gray-600 hover:text-gray-900 font-medium">데모</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-gray-900 font-medium">요금</a>
-                    <a href="app.html" class="btn-primary" style="padding: 8px 16px; font-size: 14px;">바로 시작하기</a>
-                </nav>
-            </div>
-        </div>
-    </header>
-
-    <!-- 히어로 섹션 -->
-    <section class="hero-gradient text-white py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-5xl md:text-6xl font-bold mb-6">
-                🚀 스마트한 코인 매매일지
-            </h1>
-            <p class="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
-                체계적인 거래 기록과 분석으로 더 나은 투자 결정을 내리세요
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <a href="app.html" class="btn-primary text-xl px-12 py-4">
-                    🎯 무료로 시작하기
-                </a>
-                <a href="#demo" class="btn-secondary text-white border-white hover:bg-white hover:text-gray-900">
-                    📺 데모 보기
-                </a>
-            </div>
-            <p class="mt-4 text-sm opacity-75">
-                💡 회원가입 없이 바로 사용 가능 • 로컬 저장소 • 온라인 백업 선택
-            </p>
-        </div>
-    </section>
-
-    <!-- 주요 기능 -->
-    <section id="features" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4" style="color: var(--foreground);">
-                    ✨ 주요 기능
-                </h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    전문 트레이더들이 사용하는 도구를 누구나 쉽게
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- 거래 기록 -->
-                <div class="feature-card p-8 text-center">
-                    <div class="text-4xl mb-4">📈</div>
-                    <h3 class="text-xl font-bold mb-3" style="color: var(--foreground);">거래 기록</h3>
-                    <p class="text-gray-600 mb-4">
-                        매수/매도 내역을 자동으로 정리하고 손익을 실시간 계산합니다
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>✅ 자동 손익 계산</li>
-                        <li>✅ 코인별 분류</li>
-                        <li>✅ 거래소 연동</li>
-                    </ul>
-                </div>
-
-                <!-- 매매 일지 -->
-                <div class="feature-card p-8 text-center">
-                    <div class="text-4xl mb-4">📝</div>
-                    <h3 class="text-xl font-bold mb-3" style="color: var(--foreground);">매매 일지</h3>
-                    <p class="text-gray-600 mb-4">
-                        거래 전략과 심리 상태를 기록하여 패턴을 분석하세요
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>✅ 전략 노트</li>
-                        <li>✅ 감정 기록</li>
-                        <li>✅ 스크린샷 첨부</li>
-                    </ul>
-                </div>
-
-                <!-- 통계 분석 -->
-                <div class="feature-card p-8 text-center">
-                    <div class="text-4xl mb-4">📊</div>
-                    <h3 class="text-xl font-bold mb-3" style="color: var(--foreground);">통계 분석</h3>
-                    <p class="text-gray-600 mb-4">
-                        수익률, 승률, 위험도 등을 시각화하여 성과를 개선하세요
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>✅ 수익률 차트</li>
-                        <li>✅ 승률 분석</li>
-                        <li>✅ 리스크 관리</li>
-                    </ul>
-                </div>
-
-                <!-- 목표 설정 -->
-                <div class="feature-card p-8 text-center">
-                    <div class="text-4xl mb-4">🎯</div>
-                    <h3 class="text-xl font-bold mb-3" style="color: var(--foreground);">목표 관리</h3>
-                    <p class="text-gray-600 mb-4">
-                        월간/연간 목표를 설정하고 달성도를 추적하세요
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>✅ 수익 목표</li>
-                        <li>✅ 리스크 한도</li>
-                        <li>✅ 달성률 추적</li>
-                    </ul>
-                </div>
-
-                <!-- 백업 & 동기화 -->
-                <div class="feature-card p-8 text-center">
-                    <div class="text-4xl mb-4">☁️</div>
-                    <h3 class="text-xl font-bold mb-3" style="color: var(--foreground);">백업 & 동기화</h3>
-                    <p class="text-gray-600 mb-4">
-                        모든 기기에서 데이터를 안전하게 동기화하세요
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>✅ 자동 백업</li>
-                        <li>✅ 기기간 동기화</li>
-                        <li>✅ 데이터 보안</li>
-                    </ul>
-                </div>
-
-                <!-- 모바일 지원 -->
-                <div class="feature-card p-8 text-center">
-                    <div class="text-4xl mb-4">📱</div>
-                    <h3 class="text-xl font-bold mb-3" style="color: var(--foreground);">모바일 최적화</h3>
-                    <p class="text-gray-600 mb-4">
-                        언제 어디서나 스마트폰으로 거래를 기록하세요
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>✅ 반응형 디자인</li>
-                        <li>✅ 터치 최적화</li>
-                        <li>✅ 오프라인 사용</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 사용 방법 -->
-    <section id="demo" class="py-20" style="background: var(--background);">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4" style="color: var(--foreground);">
-                    🎮 사용 방법
-                </h2>
-                <p class="text-xl text-gray-600">
-                    3단계로 간단하게 시작하세요
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center">
-                    <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <span class="text-2xl font-bold" style="color: var(--primary);">1</span>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">🚀 바로 시작</h3>
-                    <p class="text-gray-600">
-                        회원가입 없이 "시작하기" 버튼만 누르면 바로 사용할 수 있어요
-                    </p>
-                </div>
-                
-                <div class="text-center">
-                    <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <span class="text-2xl font-bold" style="color: var(--primary);">2</span>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">📝 거래 기록</h3>
-                    <p class="text-gray-600">
-                        매수/매도할 때마다 간단히 기록하고 메모를 남기세요
-                    </p>
-                </div>
-                
-                <div class="text-center">
-                    <div class="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <span class="text-2xl font-bold" style="color: var(--primary);">3</span>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">📊 성과 분석</h3>
-                    <p class="text-gray-600">
-                        자동으로 생성되는 차트와 통계로 투자 패턴을 개선하세요
-                    </p>
-                </div>
-            </div>
-            
-            <div class="text-center mt-12">
-                <a href="app.html" class="btn-primary text-xl px-12 py-4">
-                    🎯 지금 바로 시작하기
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- 요금 -->
-    <section id="pricing" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4" style="color: var(--foreground);">
-                    💰 요금제
-                </h2>
-                <p class="text-xl text-gray-600">
-                    모든 기능을 무료로 사용하세요
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <!-- 무료 -->
-                <div class="feature-card p-8 text-center border-2 border-blue-200">
-                    <div class="text-3xl mb-4">💻</div>
-                    <h3 class="text-2xl font-bold mb-2">로컬 사용</h3>
-                    <div class="text-4xl font-bold mb-4" style="color: var(--primary);">무료</div>
-                    <p class="text-gray-600 mb-6">
-                        이 기기에서만 사용하는 기본 버전
-                    </p>
-                    <ul class="text-left space-y-3 mb-8">
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            모든 핵심 기능
-                        </li>
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            로컬 저장소
-                        </li>
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            데이터 내보내기
-                        </li>
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            모바일 지원
-                        </li>
-                    </ul>
-                    <a href="app.html" class="btn-primary w-full">
-                        바로 시작하기
-                    </a>
-                </div>
-
-                <!-- 프리미엄 -->
-                <div class="feature-card p-8 text-center border-2 border-yellow-400 relative">
-                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span class="bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-bold">
-                            🏆 추천
-                        </span>
-                    </div>
-                    <div class="text-3xl mb-4">☁️</div>
-                    <h3 class="text-2xl font-bold mb-2">온라인 동기화</h3>
-                    <div class="text-4xl font-bold mb-4" style="color: var(--primary);">무료</div>
-                    <p class="text-gray-600 mb-6">
-                        모든 기기에서 데이터 동기화
-                    </p>
-                    <ul class="text-left space-y-3 mb-8">
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            로컬 사용의 모든 기능
-                        </li>
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            클라우드 백업
-                        </li>
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            기기간 동기화
-                        </li>
-                        <li class="flex items-center">
-                            <span class="text-green-500 mr-2">✅</span>
-                            안전한 데이터 보관
-                        </li>
-                    </ul>
-                    <a href="app.html" class="btn-primary w-full">
-                        회원가입하고 시작하기
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="hero-gradient text-white py-16">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl font-bold mb-4">
-                🎯 지금 바로 시작하세요!
-            </h2>
-            <p class="text-xl mb-8 opacity-90">
-                수많은 트레이더들이 선택한 매매일지로 투자 실력을 향상시키세요
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="app.html" class="btn-primary text-xl px-12 py-4">
-                    🚀 무료로 시작하기
-                </a>
-            </div>
-            <p class="mt-4 text-sm opacity-75">
-                💡 설치 불필요 • 회원가입 선택 • 모든 기기 지원
-            </p>
-        </div>
-    </section>
-
-    <!-- 푸터 -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-xl font-bold mb-4">📊 Trading Diary</h3>
-                    <p class="text-gray-400">
-                        스마트한 코인 매매일지로 더 나은 투자 결정을 내리세요
-                    </p>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">제품</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#features" class="hover:text-white">기능</a></li>
-                        <li><a href="#pricing" class="hover:text-white">요금</a></li>
-                        <li><a href="app.html" class="hover:text-white">앱 시작</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">지원</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">도움말</a></li>
-                        <li><a href="#" class="hover:text-white">문의하기</a></li>
-                        <li><a href="#" class="hover:text-white">사용법</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">연결</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">GitHub</a></li>
-                        <li><a href="#" class="hover:text-white">블로그</a></li>
-                        <li><a href="#" class="hover:text-white">커뮤니티</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 Trading Diary. Made with 💝 for traders.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- 스크롤 애니메이션 -->
+    <div id="root"></div>
+    
     <script>
-        // 부드러운 스크롤
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // 카드 호버 효과
-        document.querySelectorAll('.feature-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-8px)';
-            });
+        const { useState, useEffect } = React;
+        
+        function TradingApp() {
+            // 기본 상태
+            const [user, setUser] = useState(null);
+            const [isOnlineMode, setIsOnlineMode] = useState(false);
+            const [showLoginModal, setShowLoginModal] = useState(false);
+            const [isSignUp, setIsSignUp] = useState(false);
+            const [error, setError] = useState('');
+            const [activeTab, setActiveTab] = useState('dashboard');
             
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
+            // 저장된 사용자 정보 복원 (온라인 모드 확인)
+            useEffect(() => {
+                const savedUser = localStorage.getItem('tradingUser');
+                if (savedUser) {
+                    try {
+                        const userData = JSON.parse(savedUser);
+                        setUser(userData);
+                        setIsOnlineMode(userData.isOnline || false);
+                    } catch (e) {
+                        localStorage.removeItem('tradingUser');
+                    }
+                }
+            }, []);
+            
+            // 로컬 사용자로 시작
+            const startAsLocalUser = () => {
+                const localUser = {
+                    name: '로컬 사용자',
+                    email: 'local@device',
+                    avatar: '💻',
+                    isOnline: false,
+                    startTime: new Date().toISOString()
+                };
+                
+                setUser(localUser);
+                setIsOnlineMode(false);
+                localStorage.setItem('tradingUser', JSON.stringify(localUser));
+            };
+            
+            // 온라인 회원가입
+            const handleSignUp = async (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const name = formData.get('name');
+                const email = formData.get('email');
+                const password = formData.get('password');
+                
+                if (!name || !email || !password) {
+                    setError('모든 필드를 입력해주세요.');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    setError('비밀번호는 6자 이상이어야 합니다.');
+                    return;
+                }
+                
+                // 온라인 사용자 생성 (실제로는 서버에 저장)
+                const onlineUser = {
+                    name: name,
+                    email: email,
+                    avatar: '🌐',
+                    isOnline: true,
+                    signUpTime: new Date().toISOString()
+                };
+                
+                setUser(onlineUser);
+                setIsOnlineMode(true);
+                setShowLoginModal(false);
+                setError('');
+                localStorage.setItem('tradingUser', JSON.stringify(onlineUser));
+            };
+            
+            // 온라인 로그인
+            const handleLogin = async (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const email = formData.get('email');
+                const password = formData.get('password');
+                
+                if (!email || !password) {
+                    setError('이메일과 비밀번호를 모두 입력해주세요.');
+                    return;
+                }
+                
+                // 간단한 로그인 시뮬레이션
+                const onlineUser = {
+                    name: email.split('@')[0],
+                    email: email,
+                    avatar: '🌐',
+                    isOnline: true,
+                    loginTime: new Date().toISOString()
+                };
+                
+                setUser(onlineUser);
+                setIsOnlineMode(true);
+                setShowLoginModal(false);
+                setError('');
+                localStorage.setItem('tradingUser', JSON.stringify(onlineUser));
+            };
+            
+            // 로그아웃 (로컬 모드로 전환)
+            const handleLogout = () => {
+                startAsLocalUser();
+                setShowLoginModal(false);
+            };
+            
+            // 로그인 모달 렌더링
+            const renderLoginModal = () => {
+                if (!showLoginModal) return null;
+                
+                return React.createElement('div', {
+                    key: 'login-modal',
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50',
+                    onClick: (e) => {
+                        if (e.target === e.currentTarget) setShowLoginModal(false);
+                    }
+                }, [
+                    React.createElement('div', {
+                        key: 'modal-content',
+                        className: 'bg-white rounded-2xl p-8 w-full max-w-md mx-4 relative'
+                    }, [
+                        React.createElement('button', {
+                            key: 'close-btn',
+                            onClick: () => setShowLoginModal(false),
+                            className: 'absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl'
+                        }, '×'),
+                        
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-6'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, isSignUp ? '온라인 회원가입' : '온라인 로그인'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, isSignUp ? '데이터를 온라인에 저장하세요' : '온라인 계정으로 로그인')
+                        ]),
+                        
+                        error && React.createElement('div', {
+                            key: 'error',
+                            className: 'mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm'
+                        }, error),
+                        
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: isSignUp ? handleSignUp : handleLogin,
+                            className: 'space-y-4'
+                        }, [
+                            // 회원가입 시에만 이름 필드 표시
+                            isSignUp && React.createElement('div', { key: 'name-field', className: 'space-y-2' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
+                                }, '이름'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'text',
+                                    name: 'name',
+                                    required: true,
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
+                                    placeholder: '이름을 입력하세요'
+                                })
+                            ]),
+                            
+                            React.createElement('div', { key: 'email-field', className: 'space-y-2' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
+                                }, '이메일'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'email',
+                                    name: 'email',
+                                    required: true,
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
+                                    placeholder: 'your@email.com'
+                                })
+                            ]),
+                            
+                            React.createElement('div', { key: 'password-field', className: 'space-y-2' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
+                                }, '비밀번호'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'password',
+                                    name: 'password',
+                                    required: true,
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
+                                    placeholder: '6자 이상 입력하세요'
+                                })
+                            ]),
+                            
+                            React.createElement('button', {
+                                key: 'submit',
+                                type: 'submit',
+                                className: 'w-full btn-primary'
+                            }, isSignUp ? '회원가입하고 온라인 저장하기' : '로그인'),
+                            
+                            React.createElement('div', {
+                                key: 'toggle',
+                                className: 'text-center'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'toggle-btn',
+                                    type: 'button',
+                                    onClick: () => {
+                                        setIsSignUp(!isSignUp);
+                                        setError('');
+                                    },
+                                    className: 'text-sm font-medium hover:underline',
+                                    style: { color: 'var(--primary)' }
+                                }, isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            // 대시보드 렌더링
+            const renderDashboard = () => {
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header' }, [
+                        React.createElement('h1', { 
+                            className: 'text-3xl font-bold mb-2',
+                            style: { color: 'var(--foreground)' }
+                        }, 'Trading Diary'),
+                        React.createElement('p', { 
+                            className: 'text-gray-600'
+                        }, '코인 매매 일지에 오신 것을 환영합니다!'),
+                        
+                        // 저장 모드 표시
+                        React.createElement('div', {
+                            key: 'storage-status',
+                            className: `mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                                isOnlineMode 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                            }`
+                        }, [
+                            React.createElement('span', {
+                                key: 'indicator',
+                                className: `w-2 h-2 rounded-full mr-2 ${
+                                    isOnlineMode 
+                                        ? 'bg-green-500' 
+                                        : 'bg-blue-500'
+                                }`
+                            }),
+                            React.createElement('span', {
+                                key: 'text'
+                            }, isOnlineMode 
+                                ? '🌐 온라인 저장 모드 - 모든 기기에서 동기화' 
+                                : '💻 로컬 저장 모드 - 이 기기에서만 사용'
+                            )
+                        ])
+                    ]),
+                    
+                    // 환영 카드
+                    React.createElement('div', {
+                        key: 'welcome-card',
+                        className: 'bg-white rounded-lg shadow p-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'welcome',
+                            className: 'text-center'
+                        }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: `mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 ${
+                                    isOnlineMode 
+                                        ? 'bg-green-100' 
+                                        : 'bg-blue-100'
+                                }`
+                            }, [
+                                React.createElement('span', {
+                                    key: 'emoji',
+                                    className: 'text-3xl'
+                                }, user?.avatar || '📊')
+                            ]),
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-xl font-medium text-gray-900 mb-2'
+                            }, `안녕하세요, ${user?.name || '사용자'}님!`),
+                            React.createElement('p', {
+                                key: 'desc',
+                                className: 'text-gray-600 mb-6'
+                            }, isOnlineMode 
+                                ? '온라인 계정으로 모든 데이터가 안전하게 저장됩니다.' 
+                                : '지금 바로 매매일지를 작성해보세요! 데이터는 이 기기에 저장됩니다.'
+                            )
+                        ])
+                    ]),
+                    
+                    // 기능 카드들
+                    React.createElement('div', {
+                        key: 'feature-cards',
+                        className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'trades-card',
+                            className: 'bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer'
+                        }, [
+                            React.createElement('div', {
+                                key: 'trades-content',
+                                className: 'text-center'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'trades-icon',
+                                    className: 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'trades-emoji',
+                                        className: 'text-2xl'
+                                    }, '📈')
+                                ]),
+                                React.createElement('h3', {
+                                    key: 'trades-title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, '거래 기록'),
+                                React.createElement('p', {
+                                    key: 'trades-desc',
+                                    className: 'text-gray-600 text-sm'
+                                }, '매수/매도 내역을 기록하고 관리하세요')
+                            ])
+                        ]),
+                        
+                        React.createElement('div', {
+                            key: 'journal-card',
+                            className: 'bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer'
+                        }, [
+                            React.createElement('div', {
+                                key: 'journal-content',
+                                className: 'text-center'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'journal-icon',
+                                    className: 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'journal-emoji',
+                                        className: 'text-2xl'
+                                    }, '📝')
+                                ]),
+                                React.createElement('h3', {
+                                    key: 'journal-title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, '매매 일지'),
+                                React.createElement('p', {
+                                    key: 'journal-desc',
+                                    className: 'text-gray-600 text-sm'
+                                }, '거래 전략과 결과를 분석하세요')
+                            ])
+                        ]),
+                        
+                        React.createElement('div', {
+                            key: 'stats-card',
+                            className: 'bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer'
+                        }, [
+                            React.createElement('div', {
+                                key: 'stats-content',
+                                className: 'text-center'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'stats-icon',
+                                    className: 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'stats-emoji',
+                                        className: 'text-2xl'
+                                    }, '📊')
+                                ]),
+                                React.createElement('h3', {
+                                    key: 'stats-title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, '통계 분석'),
+                                React.createElement('p', {
+                                    key: 'stats-desc',
+                                    className: 'text-gray-600 text-sm'
+                                }, '수익률과 성과를 시각화하세요')
+                            ])
+                        ])
+                    ]),
+                    
+                    // 온라인 저장 안내 (로컬 모드일 때만)
+                    !isOnlineMode && React.createElement('div', {
+                        key: 'online-promotion',
+                        className: 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'promotion-content',
+                            className: 'text-center'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'promotion-title',
+                                className: 'text-lg font-medium text-blue-900 mb-2'
+                            }, '🌐 온라인 저장으로 업그레이드하세요!'),
+                            React.createElement('p', {
+                                key: 'promotion-desc',
+                                className: 'text-blue-700 mb-4'
+                            }, '회원가입하면 모든 기기에서 데이터를 동기화하고 안전하게 백업할 수 있습니다.'),
+                            React.createElement('div', {
+                                key: 'promotion-buttons',
+                                className: 'space-x-4'
+                            }, [
+                                React.createElement('button', {
+                                    key: 'signup-btn',
+                                    onClick: () => {
+                                        setIsSignUp(true);
+                                        setShowLoginModal(true);
+                                    },
+                                    className: 'btn-primary'
+                                }, '회원가입하기'),
+                                React.createElement('button', {
+                                    key: 'login-btn',
+                                    onClick: () => {
+                                        setIsSignUp(false);
+                                        setShowLoginModal(true);
+                                    },
+                                    className: 'btn-secondary'
+                                }, '로그인하기')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            // 처음 접속 시 자동으로 로컬 사용자로 시작
+            useEffect(() => {
+                if (!user) {
+                    startAsLocalUser();
+                }
+            }, [user]);
+            
+            // 메인 UI 렌더링
+            return React.createElement('div', {
+                className: 'min-h-screen bg-gray-50'
+            }, [
+                // 헤더
+                React.createElement('header', {
+                    key: 'header',
+                    className: 'bg-white shadow-sm border-b'
+                }, [
+                    React.createElement('div', {
+                        key: 'header-content',
+                        className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header-flex',
+                            className: 'flex justify-between items-center h-16'
+                        }, [
+                            React.createElement('div', {
+                                key: 'logo-section',
+                                className: 'flex items-center space-x-6'
+                            }, [
+                                React.createElement('h1', {
+                                    key: 'logo',
+                                    className: 'text-xl font-semibold text-gray-900'
+                                }, 'Trading Diary'),
+                                React.createElement('span', {
+                                    key: 'mode-badge',
+                                    className: `px-2 py-1 text-xs rounded-full ${
+                                        isOnlineMode 
+                                            ? 'bg-green-100 text-green-700' 
+                                            : 'bg-blue-100 text-blue-700'
+                                    }`
+                                }, isOnlineMode ? '온라인' : '로컬'),
+                                React.createElement('a', {
+                                    key: 'about-link',
+                                    href: 'about.html',
+                                    className: 'text-sm text-gray-600 hover:text-gray-900'
+                                }, '서비스 소개')
+                            ]),
+                            React.createElement('div', {
+                                key: 'user-menu',
+                                className: 'flex items-center space-x-4'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'welcome',
+                                    className: 'text-sm text-gray-600'
+                                }, `${user?.name || '사용자'}님`),
+                                isOnlineMode ? 
+                                    React.createElement('button', {
+                                        key: 'logout',
+                                        onClick: handleLogout,
+                                        className: 'text-sm text-red-600 hover:text-red-700'
+                                    }, '로컬 모드로 전환') :
+                                    React.createElement('button', {
+                                        key: 'online',
+                                        onClick: () => {
+                                            setIsSignUp(true);
+                                            setShowLoginModal(true);
+                                        },
+                                        className: 'text-sm text-blue-600 hover:text-blue-700'
+                                    }, '온라인 저장')
+                            ])
+                        ])
+                    ])
+                ]),
+                
+                // 메인 컨텐츠
+                React.createElement('main', {
+                    key: 'main',
+                    className: 'max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'
+                }, [
+                    React.createElement('div', {
+                        key: 'content',
+                        className: 'px-4 py-6 sm:px-0'
+                    }, [
+                        renderDashboard()
+                    ])
+                ]),
+                
+                renderLoginModal()
+            ]);
+        }
+        
+        // 앱 시작
+        function startApp() {
+            console.log('Trading Diary App starting...');
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(React.createElement(TradingApp));
+        }
+        
+        // DOM 준비되면 바로 시작
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
     </script>
 </body>
 </html>
