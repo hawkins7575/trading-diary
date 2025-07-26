@@ -170,6 +170,34 @@
 
             // 유틸리티 함수들
             const formatCurrency = (amount) => `₩${Number(amount).toLocaleString()}`;
+
+            const resetAllData = () => {
+                if (window.confirm('정말로 모든 데이터를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다:\n• 모든 거래내역\n• 매매일지\n• 매매전략\n• 목표설정\n\n삭제 후 샘플 데이터로 초기화됩니다.')) {
+                    // localStorage 클리어
+                    localStorage.removeItem('trading-diary-trades');
+                    localStorage.removeItem('trading-diary-journals');
+                    localStorage.removeItem('trading-diary-strategies');
+                    localStorage.removeItem('trading-diary-goals');
+                    
+                    // 상태를 기본값으로 리셋
+                    setTrades([
+                        { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
+                        { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' },
+                        { id: 3, date: '2025-07-22', entry: 500000, withdrawal: 0, balance: 1620000, profit: 40000, memo: '추가 투자' },
+                        { id: 4, date: '2025-07-23', entry: 0, withdrawal: 200000, balance: 1350000, profit: -70000, memo: '일부 출금' },
+                        { id: 5, date: '2025-07-24', entry: 200000, withdrawal: 0, balance: 1580000, profit: 30000, memo: '추가 매수' },
+                        { id: 6, date: '2025-07-25', entry: 0, withdrawal: 0, balance: 1620000, profit: 40000, memo: '시장 회복' }
+                    ]);
+                    setJournals([]);
+                    setStrategies([]);
+                    setGoals([]);
+                    
+                    // 대시보드로 이동
+                    setActiveTab('dashboard');
+                    
+                    alert('모든 데이터가 초기화되었습니다.');
+                }
+            };
             
             const calculateStats = () => {
                 const totalProfit = trades.reduce((sum, trade) => sum + (trade.profit || 0), 0);
@@ -1984,6 +2012,22 @@
                                 React.createElement('p', { key: 'version', className: 'text-gray-500' }, '버전: 1.0.0'),
                                 React.createElement('p', { key: 'updated', className: 'text-gray-500' }, '최종 업데이트: 2024년 12월')
                             ])
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'reset-data',
+                            className: 'metric-card p-6 border-red-200'
+                        }, [
+                            React.createElement('h2', {
+                                className: 'text-xl font-semibold mb-4 text-red-600'
+                            }, '🗑️ 데이터 초기화'),
+                            React.createElement('p', { 
+                                className: 'text-sm text-gray-600 mb-4'
+                            }, '모든 데이터를 삭제하고 처음부터 시작할 수 있습니다. 이 작업은 되돌릴 수 없습니다.'),
+                            React.createElement('button', {
+                                onClick: resetAllData,
+                                className: 'w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors'
+                            }, '모든 데이터 삭제')
                         ])
                     ])
                 ]);
