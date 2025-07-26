@@ -103,14 +103,20 @@
                 entry: '', withdrawal: '', balance: '', memo: ''
             });
             const [editingTrade, setEditingTrade] = useState(null);
-            const [trades, setTrades] = useState([
-                { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
-                { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' },
-                { id: 3, date: '2025-07-22', entry: 500000, withdrawal: 0, balance: 1620000, profit: 40000, memo: '추가 투자' },
-                { id: 4, date: '2025-07-23', entry: 0, withdrawal: 200000, balance: 1350000, profit: -70000, memo: '일부 출금' },
-                { id: 5, date: '2025-07-24', entry: 200000, withdrawal: 0, balance: 1580000, profit: 30000, memo: '추가 매수' },
-                { id: 6, date: '2025-07-25', entry: 0, withdrawal: 0, balance: 1620000, profit: 40000, memo: '시장 회복' }
-            ]);
+            const [trades, setTrades] = useState(() => {
+                const saved = localStorage.getItem('trading-diary-trades');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return [
+                    { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
+                    { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' },
+                    { id: 3, date: '2025-07-22', entry: 500000, withdrawal: 0, balance: 1620000, profit: 40000, memo: '추가 투자' },
+                    { id: 4, date: '2025-07-23', entry: 0, withdrawal: 200000, balance: 1350000, profit: -70000, memo: '일부 출금' },
+                    { id: 5, date: '2025-07-24', entry: 200000, withdrawal: 0, balance: 1580000, profit: 30000, memo: '추가 매수' },
+                    { id: 6, date: '2025-07-25', entry: 0, withdrawal: 0, balance: 1620000, profit: 40000, memo: '시장 회복' }
+                ];
+            });
             
             // 매매일지 관련
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -118,7 +124,10 @@
             const [showJournalForm, setShowJournalForm] = useState(false);
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const [viewMode, setViewMode] = useState('calendar');
-            const [journals, setJournals] = useState([]);
+            const [journals, setJournals] = useState(() => {
+                const saved = localStorage.getItem('trading-diary-journals');
+                return saved ? JSON.parse(saved) : [];
+            });
             
             // 매매전략 관련
             const [showStrategyForm, setShowStrategyForm] = useState(false);
@@ -126,7 +135,10 @@
                 name: '', description: '', rules: '', riskLevel: 'medium'
             });
             const [editingStrategy, setEditingStrategy] = useState(null);
-            const [strategies, setStrategies] = useState([]);
+            const [strategies, setStrategies] = useState(() => {
+                const saved = localStorage.getItem('trading-diary-strategies');
+                return saved ? JSON.parse(saved) : [];
+            });
             
             // 목표설정 관련
             const [showGoalForm, setShowGoalForm] = useState(false);
@@ -134,8 +146,28 @@
                 title: '', targetAmount: '', targetWinRate: '', deadline: '', description: ''
             });
             const [editingGoal, setEditingGoal] = useState(null);
-            const [goals, setGoals] = useState([]);
+            const [goals, setGoals] = useState(() => {
+                const saved = localStorage.getItem('trading-diary-goals');
+                return saved ? JSON.parse(saved) : [];
+            });
             
+            // localStorage 자동 저장
+            React.useEffect(() => {
+                localStorage.setItem('trading-diary-trades', JSON.stringify(trades));
+            }, [trades]);
+
+            React.useEffect(() => {
+                localStorage.setItem('trading-diary-journals', JSON.stringify(journals));
+            }, [journals]);
+
+            React.useEffect(() => {
+                localStorage.setItem('trading-diary-strategies', JSON.stringify(strategies));
+            }, [strategies]);
+
+            React.useEffect(() => {
+                localStorage.setItem('trading-diary-goals', JSON.stringify(goals));
+            }, [goals]);
+
             // 유틸리티 함수들
             const formatCurrency = (amount) => `₩${Number(amount).toLocaleString()}`;
             
