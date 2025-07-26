@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Trading Tracker</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+    <script>
+        // Recharts 로딩 확인
+        window.addEventListener('load', function() {
+            console.log('Recharts loaded:', !!window.Recharts);
+            if (window.Recharts) {
+                console.log('Available components:', Object.keys(window.Recharts));
+            }
+        });
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+          --background: #f5f7fa;
+          --foreground: #1a2238;
+          --card: #e3eaf2;
+          --primary: #3a5ba0;
+          --secondary: #f7c873;
+          --accent: #6ea3c1;
+          --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: var(--background); 
+            font-family: var(--font-sans);
+            color: var(--foreground);
+        }
+        
+        .metric-card { 
+            background: var(--card); 
+            border-radius: 8px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .sidebar-container {
+            background: var(--card);
+        }
+        
+        .compact-stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .stat-label-compact {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+        
+        .stat-value-compact {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--foreground);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script>
+        const { useState, useEffect } = React;
+        
+        function CoinTradingApp() {
+            // 기본 상태
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [chartPeriod, setChartPeriod] = useState('weekly');
+            
+            // 로그인 관련
+            const [showLoginModal, setShowLoginModal] = useState(false);
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [user, setUser] = useState(null);
+            const [isSignUp, setIsSignUp] = useState(false);
+            const [error, setError] = useState('');
+            
+            // 거래내역 관련
+            const [showTradeForm, setShowTradeForm] = useState(false);
+            const [currentTrade, setCurrentTrade] = useState({
+                date: new Date().toISOString().split('T')[0],
+                entry: '', withdrawal: '', balance: '', memo: ''
+            });
+            const [editingTrade, setEditingTrade] = useState(null);
+            const [trades, setTrades] = useState([
+                { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
+                { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' },
+                { id: 3, date: '2025-07-22', entry: 500000, withdrawal: 0, balance: 1620000, profit: 40000, memo: '추가 투자' },
+                { id: 4, date: '2025-07-23', entry: 0, withdrawal: 200000, balance: 1350000, profit: -70000, memo: '일부 출금' },
+                { id: 5, date: '2025-07-24', entry: 200000, withdrawal: 0, balance: 1580000, profit: 30000, memo: '추가 매수' },
+                { id: 6, date: '2025-07-25', entry: 0, withdrawal: 0, balance: 1620000, profit: 40000, memo: '시장 회복' }
+            ]);
+            
+            // 매매일지 관련
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [journalEntry, setJournalEntry] = useState('');
+            const [showJournalForm, setShowJournalForm] = useState(false);
+            const [currentMonth, setCurrentMonth] = useState(new Date());
+            const [viewMode, setViewMode] = useState('calendar');
+            const [journals, setJournals] = useState([]);
+            
+            // 매매전략 관련
+            const [showStrategyForm, setShowStrategyForm] = useState(false);
+            const [currentStrategy, setCurrentStrategy] = useState({
+                name: '', description: '', rules: '', riskLevel: 'medium'
+            });
+            const [editingStrategy, setEditingStrategy] = useState(null);
+            const [strategies, setStrategies] = useState([]);
+            
+            // 목표설정 관련
+            const [showGoalForm, setShowGoalForm] = useState(false);
+            const [currentGoal, setCurrentGoal] = useState({
+                title: '', targetAmount: '', targetWinRate: '', deadline: '', description: ''
+            });
+            const [editingGoal, setEditingGoal] = useState(null);
+            const [goals, setGoals] = useState([]);
+            
+            // 유틸리티 함수들
+            const formatCurrency = (amount) => `₩${Number(amount).toLocaleString()}`;
+            
+            const calculateStats = () => {
+                const totalProfit = trades.reduce((sum, trade) => sum + (trade.profit || 0), 0);
+                const totalTrades = trades.length;
+                const profitTrades = trades.filter(t => t.profit > 0).length;
+                const winRate = totalTrades > 0 ? (profitTrades / totalTrades * 100) : 0;
+                const currentBalance = trades.length > 0 ? trades[trades.length - 1].balance : 0;
+                
+                return { totalProfit, totalTrades, winRate, currentBalance };
+            };
+            
+            const generateChartData = () => {
+                if (trades.length === 0) return [];
+                
+                const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+                const data = [];
+                let cumulativeProfit = 0;
+                let totalInvestment = 0; // 총 투자금 추적
+                
+                if (chartPeriod === 'daily') {
+                    sortedTrades.forEach((trade) => {
+                        cumulativeProfit += trade.profit || 0;
+                        totalInvestment += trade.entry || 0; // 입금만 투자금으로 계산
+                        const investmentBase = totalInvestment || 1000000; // 투자금이 0이면 초기값 사용
+                        const profitRate = ((cumulativeProfit / investmentBase) * 100);
+                        data.push({
+                            date: new Date(trade.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+                            profitRate: parseFloat(profitRate.toFixed(2)),
+                            profit: cumulativeProfit,
+                            investment: totalInvestment
+                        });
+                    });
+                } else if (chartPeriod === 'weekly') {
+                    const weeklyData = {};
+                    const weeklyInvestment = {};
+                    
+                    sortedTrades.forEach(trade => {
+                        const date = new Date(trade.date);
+                        const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
+                        const weekKey = weekStart.toISOString().split('T')[0];
+                        
+                        if (!weeklyData[weekKey]) {
+                            weeklyData[weekKey] = 0;
+                            weeklyInvestment[weekKey] = 0;
+                        }
+                        weeklyData[weekKey] += trade.profit || 0;
+                        weeklyInvestment[weekKey] += trade.entry || 0;
+                    });
+                    
+                    let cumulative = 0;
+                    let cumulativeInvestment = 0;
+                    Object.entries(weeklyData).sort().forEach(([week, profit]) => {
+                        cumulative += profit;
+                        cumulativeInvestment += weeklyInvestment[week];
+                        const investmentBase = cumulativeInvestment || 1000000;
+                        const profitRate = ((cumulative / investmentBase) * 100);
+                        data.push({
+                            date: new Date(week).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+                            profitRate: parseFloat(profitRate.toFixed(2)),
+                            profit: cumulative,
+                            investment: cumulativeInvestment
+                        });
+                    });
+                } else {
+                    const monthlyData = {};
+                    const monthlyInvestment = {};
+                    
+                    sortedTrades.forEach(trade => {
+                        const month = trade.date.substring(0, 7);
+                        if (!monthlyData[month]) {
+                            monthlyData[month] = 0;
+                            monthlyInvestment[month] = 0;
+                        }
+                        monthlyData[month] += trade.profit || 0;
+                        monthlyInvestment[month] += trade.entry || 0;
+                    });
+                    
+                    let cumulative = 0;
+                    let cumulativeInvestment = 0;
+                    Object.entries(monthlyData).sort().forEach(([month, profit]) => {
+                        cumulative += profit;
+                        cumulativeInvestment += monthlyInvestment[month];
+                        const investmentBase = cumulativeInvestment || 1000000;
+                        const profitRate = ((cumulative / investmentBase) * 100);
+                        data.push({
+                            date: new Date(month + '-01').toLocaleDateString('ko-KR', { year: 'numeric', month: 'short' }),
+                            profitRate: parseFloat(profitRate.toFixed(2)),
+                            profit: cumulative,
+                            investment: cumulativeInvestment
+                        });
+                    });
+                }
+                
+                return data;
+            };
+            
+            // 핸들러 함수들
+            const handleLogin = (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const email = formData.get('email');
+                const password = formData.get('password');
+                
+                if (!email || !password) {
+                    setError('이메일과 비밀번호를 모두 입력해주세요.');
+                    return;
+                }
+                
+                if (email && password.length >= 6) {
+                    setUser({
+                        name: email.split('@')[0],
+                        email: email,
+                        avatar: '👤'
+                    });
+                    setIsLoggedIn(true);
+                    setShowLoginModal(false);
+                    setError('');
+                } else {
+                    setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
+                }
+            };
+            
+            const handleLogout = () => {
+                setIsLoggedIn(false);
+                setUser(null);
+            };
+            
+            const handleSaveTrade = () => {
+                const entry = parseFloat(currentTrade.entry) || 0;
+                const withdrawal = parseFloat(currentTrade.withdrawal) || 0;
+                const balance = parseFloat(currentTrade.balance) || 0;
+                
+                if (!currentTrade.date || balance === 0) {
+                    alert('날짜와 잔고는 필수 입력 항목입니다.');
+                    return;
+                }
+                
+                const prevTrade = trades.find(t => new Date(t.date) < new Date(currentTrade.date));
+                const prevBalance = prevTrade ? prevTrade.balance : 1000000;
+                const profit = balance - prevBalance - entry + withdrawal;
+                
+                const newTrade = {
+                    ...currentTrade,
+                    id: editingTrade?.id || Date.now(),
+                    entry, withdrawal, balance,
+                    profit: parseFloat(profit.toFixed(2))
+                };
+                
+                if (editingTrade) {
+                    setTrades(prev => prev.map(t => t.id === editingTrade.id ? newTrade : t));
+                } else {
+                    setTrades(prev => [...prev, newTrade].sort((a, b) => new Date(a.date) - new Date(b.date)));
+                }
+                
+                setCurrentTrade({
+                    date: new Date().toISOString().split('T')[0],
+                    entry: '', withdrawal: '', balance: '', memo: ''
+                });
+                setEditingTrade(null);
+                setShowTradeForm(false);
+            };
+            
+            const handleEditTrade = (trade) => {
+                setCurrentTrade(trade);
+                setEditingTrade(trade);
+                setShowTradeForm(true);
+            };
+            
+            const handleDeleteTrade = (id) => {
+                if (confirm('이 거래를 삭제하시겠습니까?')) {
+                    setTrades(prev => prev.filter(t => t.id !== id));
+                }
+            };
+            
+            const handleSaveJournalEntry = () => {
+                if (!journalEntry.trim()) {
+                    alert('일지 내용을 입력해주세요');
+                    return;
+                }
+                
+                const newEntry = {
+                    id: Date.now(),
+                    date: selectedDate,
+                    content: journalEntry,
+                    timestamp: new Date().toISOString()
+                };
+                
+                setJournals(prev => {
+                    const filtered = prev.filter(j => j.date !== selectedDate);
+                    return [...filtered, newEntry].sort((a, b) => new Date(b.date) - new Date(a.date));
+                });
+                
+                setJournalEntry('');
+                setShowJournalForm(false);
+            };
+            
+            // 매매전략 핸들러
+            const handleSaveStrategy = () => {
+                if (!currentStrategy.name.trim()) {
+                    alert('전략명을 입력해주세요');
+                    return;
+                }
+                
+                const newStrategy = {
+                    ...currentStrategy,
+                    id: editingStrategy?.id || Date.now(),
+                    createdAt: editingStrategy?.createdAt || new Date().toISOString()
+                };
+                
+                if (editingStrategy) {
+                    setStrategies(prev => prev.map(s => s.id === editingStrategy.id ? newStrategy : s));
+                } else {
+                    setStrategies(prev => [...prev, newStrategy]);
+                }
+                
+                setCurrentStrategy({ name: '', description: '', rules: '', riskLevel: 'medium' });
+                setEditingStrategy(null);
+                setShowStrategyForm(false);
+            };
+            
+            const handleEditStrategy = (strategy) => {
+                setCurrentStrategy(strategy);
+                setEditingStrategy(strategy);
+                setShowStrategyForm(true);
+            };
+            
+            const handleDeleteStrategy = (id) => {
+                if (confirm('이 전략을 삭제하시겠습니까?')) {
+                    setStrategies(prev => prev.filter(s => s.id !== id));
+                }
+            };
+            
+            // 목표설정 핸들러
+            const handleSaveGoal = () => {
+                if (!currentGoal.title.trim()) {
+                    alert('목표명을 입력해주세요');
+                    return;
+                }
+                
+                const newGoal = {
+                    ...currentGoal,
+                    id: editingGoal?.id || Date.now(),
+                    createdAt: editingGoal?.createdAt || new Date().toISOString(),
+                    progress: editingGoal?.progress || 0
+                };
+                
+                if (editingGoal) {
+                    setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
+                } else {
+                    setGoals(prev => [...prev, newGoal]);
+                }
+                
+                setCurrentGoal({ title: '', targetAmount: '', targetWinRate: '', deadline: '', description: '' });
+                setEditingGoal(null);
+                setShowGoalForm(false);
+            };
+            
+            const handleEditGoal = (goal) => {
+                setCurrentGoal(goal);
+                setEditingGoal(goal);
+                setShowGoalForm(true);
+            };
+            
+            const handleDeleteGoal = (id) => {
+                if (confirm('이 목표를 삭제하시겠습니까?')) {
+                    setGoals(prev => prev.filter(g => g.id !== id));
+                }
+            };
+            
+            // 캘린더 유틸리티
+            const getDaysInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDayOfWeek = firstDay.getDay();
+                
+                const days = [];
+                for (let i = 0; i < startingDayOfWeek; i++) {
+                    days.push(null);
+                }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    days.push(new Date(year, month, day));
+                }
+                
+                return days;
+            };
+            
+            const formatDateForJournal = (date) => {
+                if (!date) return '';
+                return date.toISOString().split('T')[0];
+            };
+            
+            const hasJournalEntry = (date) => {
+                if (!date) return false;
+                const dateStr = formatDateForJournal(date);
+                return journals.some(j => j.date === dateStr);
+            };
+            
+            const stats = calculateStats();
+            const chartData = generateChartData();
+            
+            // 샘플 데이터 (데이터가 없을 때)
+            const sampleChartData = chartData.length > 0 ? chartData : [
+                { date: '1월 1일', profitRate: 0, profit: 0, investment: 1000000 },
+                { date: '1월 15일', profitRate: 2.5, profit: 25000, investment: 1000000 },
+                { date: '2월 1일', profitRate: 1.8, profit: 18000, investment: 1000000 },
+                { date: '2월 15일', profitRate: 3.2, profit: 32000, investment: 1000000 },
+                { date: '3월 1일', profitRate: 4.7, profit: 47000, investment: 1000000 }
+            ];
+            const displayChartData = chartData.length > 0 ? chartData : sampleChartData;
+            
+            // 렌더링 함수들
+            const renderLoginModal = () => {
+                return React.createElement('div', {
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50',
+                    onClick: (e) => e.target === e.currentTarget && setShowLoginModal(false)
+                }, [
+                    React.createElement('div', {
+                        key: 'modal',
+                        className: 'bg-white rounded-2xl p-8 w-full max-w-md mx-4 relative'
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'text-center mb-8'
+                        }, [
+                            React.createElement('h2', {
+                                key: 'title',
+                                className: 'text-2xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, isSignUp ? '회원가입' : '로그인'),
+                            React.createElement('p', {
+                                key: 'subtitle',
+                                className: 'text-gray-600'
+                            }, isSignUp ? '새 계정을 만들어보세요' : '계정에 로그인하세요')
+                        ]),
+                        
+                        React.createElement('form', {
+                            key: 'form',
+                            onSubmit: handleLogin,
+                            className: 'space-y-4'
+                        }, [
+                            React.createElement('div', { key: 'email-field', className: 'space-y-2' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
+                                }, '이메일'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'email',
+                                    name: 'email',
+                                    required: true,
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
+                                    placeholder: 'your@email.com'
+                                })
+                            ]),
+                            React.createElement('div', { key: 'password-field', className: 'space-y-2' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
+                                }, '비밀번호'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'password',
+                                    name: 'password',
+                                    required: true,
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
+                                    placeholder: '6자 이상 입력하세요'
+                                })
+                            ]),
+                            error && React.createElement('div', {
+                                key: 'error',
+                                className: 'text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg'
+                            }, error),
+                            React.createElement('button', {
+                                key: 'submit',
+                                type: 'submit',
+                                className: 'w-full py-3 px-4 text-white font-medium rounded-lg transition-colors',
+                                style: { backgroundColor: 'var(--primary)' }
+                            }, isSignUp ? '계정 만들기' : '로그인'),
+                            React.createElement('div', {
+                                key: 'toggle',
+                                className: 'text-center pt-4'
+                            }, [
+                                React.createElement('span', {
+                                    key: 'text',
+                                    className: 'text-sm text-gray-600'
+                                }, isSignUp ? '이미 계정이 있으신가요? ' : '계정이 없으신가요? '),
+                                React.createElement('button', {
+                                    key: 'link',
+                                    type: 'button',
+                                    onClick: () => {
+                                        setIsSignUp(!isSignUp);
+                                        setError('');
+                                    },
+                                    className: 'text-sm font-medium hover:underline',
+                                    style: { color: 'var(--primary)' }
+                                }, isSignUp ? '로그인' : '회원가입')
+                            ])
+                        ]),
+                        
+                        React.createElement('button', {
+                            key: 'close',
+                            onClick: () => setShowLoginModal(false),
+                            className: 'absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors',
+                            'aria-label': '모달 닫기'
+                        }, '✕')
+                    ])
+                ]);
+            };
+            
+            const renderDashboard = () => {
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header' }, [
+                        React.createElement('h1', { 
+                            className: 'text-3xl font-bold mb-2',
+                            style: { color: 'var(--foreground)' }
+                        }, '대시보드'),
+                        React.createElement('p', { 
+                            className: 'text-gray-600'
+                        }, '투자 현황을 한눈에 확인하세요')
+                    ]),
+                    
+                    React.createElement('div', {
+                        key: 'metrics',
+                        className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'
+                    }, [
+                        React.createElement('div', { 
+                            key: 'profit',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '총 수익'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: stats.totalProfit >= 0 ? 'var(--accent)' : '#ef4444' }
+                            }, formatCurrency(stats.totalProfit))
+                        ]),
+                        React.createElement('div', { 
+                            key: 'balance',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '현재 잔고'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: 'var(--foreground)' }
+                            }, formatCurrency(stats.currentBalance))
+                        ]),
+                        React.createElement('div', { 
+                            key: 'trades',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '총 거래'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: 'var(--foreground)' }
+                            }, `${stats.totalTrades}건`)
+                        ]),
+                        React.createElement('div', { 
+                            key: 'winrate',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '승률'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: 'var(--accent)' }
+                            }, `${stats.winRate.toFixed(1)}%`)
+                        ])
+                    ]),
+                    
+                    // 투자금 대비 수익률 차트
+                    React.createElement('div', {
+                        key: 'investment-return-chart',
+                        className: 'metric-card p-6 mt-6',
+                        style: { width: '100%', minHeight: '400px' }
+                    }, [
+                        React.createElement('div', {
+                            key: 'header',
+                            className: 'flex items-center justify-between mb-6'
+                        }, [
+                            React.createElement('div', { key: 'info' }, [
+                                React.createElement('h3', {
+                                    className: 'text-xl font-bold mb-2',
+                                    style: { color: 'var(--foreground)' }
+                                }, '투자금 대비 수익률'),
+                                React.createElement('p', {
+                                    className: 'text-sm text-gray-600'
+                                }, '실제 투자한 금액 대비 수익률 변화를 확인하세요')
+                            ]),
+                            React.createElement('div', {
+                                key: 'period-buttons',
+                                className: 'flex rounded-lg p-1',
+                                style: { backgroundColor: 'var(--card)' }
+                            }, [
+                                React.createElement('button', {
+                                    key: 'daily',
+                                    onClick: () => setChartPeriod('daily'),
+                                    className: `px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                                        chartPeriod === 'daily' 
+                                            ? 'text-white'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                    }`,
+                                    style: chartPeriod === 'daily' ? { backgroundColor: 'var(--primary)' } : {}
+                                }, '일간'),
+                                React.createElement('button', {
+                                    key: 'weekly',
+                                    onClick: () => setChartPeriod('weekly'),
+                                    className: `px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                                        chartPeriod === 'weekly' 
+                                            ? 'text-white'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                    }`,
+                                    style: chartPeriod === 'weekly' ? { backgroundColor: 'var(--primary)' } : {}
+                                }, '주간'),
+                                React.createElement('button', {
+                                    key: 'monthly',
+                                    onClick: () => setChartPeriod('monthly'),
+                                    className: `px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                                        chartPeriod === 'monthly' 
+                                            ? 'text-white'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                    }`,
+                                    style: chartPeriod === 'monthly' ? { backgroundColor: 'var(--primary)' } : {}
+                                }, '월간')
+                            ])
+                        ]),
+                        React.createElement('div', {
+                            key: 'chart-container',
+                            className: 'h-80 relative bg-white rounded-lg border p-4'
+                        }, [
+                            // 현재 수익률 표시
+                            React.createElement('div', {
+                                key: 'current-rate',
+                                className: 'absolute top-4 left-4 z-10'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'rate-value',
+                                    className: 'text-2xl font-bold text-green-600'
+                                }, `${displayChartData[displayChartData.length - 1]?.profitRate || 0}%`),
+                                React.createElement('div', {
+                                    key: 'rate-label',
+                                    className: 'text-sm text-gray-500'
+                                }, '현재 수익률')
+                            ]),
+                            
+                            // SVG 차트 (동적 스케일링)
+                            (() => {
+                                // 데이터 범위 계산
+                                const profitRates = displayChartData.map(d => d.profitRate);
+                                const minRate = Math.min(...profitRates, 0);
+                                const maxRate = Math.max(...profitRates, 0);
+                                const padding = Math.max((maxRate - minRate) * 0.1, 1); // 최소 1% 패딩
+                                const yMin = Math.floor(minRate - padding);
+                                const yMax = Math.ceil(maxRate + padding);
+                                const yRange = yMax - yMin;
+                                
+                                // Y축 눈금 계산 (4-6개 눈금)
+                                const getYTicks = () => {
+                                    const tickCount = 5;
+                                    const step = Math.ceil(yRange / tickCount);
+                                    const ticks = [];
+                                    for (let i = 0; i <= tickCount; i++) {
+                                        const value = yMin + (i * step);
+                                        if (value <= yMax) ticks.push(value);
+                                    }
+                                    return ticks;
+                                };
+                                
+                                const yTicks = getYTicks();
+                                
+                                // 좌표 변환 함수
+                                const getY = (profitRate) => {
+                                    return 170 - ((profitRate - yMin) / yRange) * 120; // 120px 차트 높이
+                                };
+                                
+                                return React.createElement('svg', {
+                                    key: 'svg-chart',
+                                    width: '100%',
+                                    height: '240',
+                                    viewBox: '0 0 800 240',
+                                    className: 'mt-12'
+                                }, [
+                                    // 동적 격자선 (가로)
+                                    ...yTicks.map((tick, index) => {
+                                        const y = getY(tick);
+                                        return React.createElement('line', { 
+                                            key: `grid-h-${index}`, 
+                                            x1: 60, 
+                                            y1: y, 
+                                            x2: 740, 
+                                            y2: y, 
+                                            stroke: tick === 0 ? '#d1d5db' : '#f3f4f6', 
+                                            strokeWidth: tick === 0 ? 2 : 1 
+                                        });
+                                    }),
+                                    
+                                    // 차트 선
+                                    React.createElement('polyline', {
+                                        key: 'chart-line',
+                                        points: displayChartData.map((item, index) => {
+                                            const x = 60 + (index * (680 / Math.max(displayChartData.length - 1, 1)));
+                                            const y = getY(item.profitRate);
+                                            return `${x},${y}`;
+                                        }).join(' '),
+                                        fill: 'none',
+                                        stroke: '#10b981',
+                                        strokeWidth: 3,
+                                        style: { filter: 'drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3))' }
+                                    }),
+                                    
+                                    // 데이터 포인트
+                                    ...displayChartData.map((item, index) => {
+                                        const x = 60 + (index * (680 / Math.max(displayChartData.length - 1, 1)));
+                                        const y = getY(item.profitRate);
+                                        return React.createElement('circle', {
+                                            key: `point-${index}`,
+                                            cx: x,
+                                            cy: y,
+                                            r: 4,
+                                            fill: '#10b981',
+                                            stroke: 'white',
+                                            strokeWidth: 2
+                                        });
+                                    }),
+                                    
+                                    // X축 라벨
+                                    ...displayChartData.map((item, index) => {
+                                        if (index % Math.ceil(displayChartData.length / 5) === 0) {
+                                            const x = 60 + (index * (680 / Math.max(displayChartData.length - 1, 1)));
+                                            return React.createElement('text', {
+                                                key: `x-label-${index}`,
+                                                x: x,
+                                                y: 200,
+                                                textAnchor: 'middle',
+                                                fontSize: '11',
+                                                fill: '#9ca3af'
+                                            }, item.date);
+                                        }
+                                        return null;
+                                    }).filter(Boolean),
+                                    
+                                    // 동적 Y축 라벨
+                                    ...yTicks.map((tick, index) => {
+                                        const y = getY(tick) + 4; // 텍스트 중앙 정렬을 위한 오프셋
+                                        return React.createElement('text', { 
+                                            key: `y-${index}`, 
+                                            x: 50, 
+                                            y: y, 
+                                            textAnchor: 'end', 
+                                            fontSize: '11', 
+                                            fill: tick === 0 ? '#374151' : '#9ca3af',
+                                            fontWeight: tick === 0 ? 'bold' : 'normal'
+                                        }, `${tick > 0 ? '+' : ''}${tick}%`);
+                                    })
+                                ]);
+                            })()
+                        ])
+                    ])
+                ]);
+            };
+            
+            const renderTrades = () => {
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header', className: 'flex justify-between items-center' }, [
+                        React.createElement('div', { key: 'title' }, [
+                            React.createElement('h1', { 
+                                className: 'text-xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, '거래내역'),
+                            React.createElement('p', { 
+                                className: 'text-sm text-gray-600'
+                            }, '모든 거래 기록을 관리하세요')
+                        ]),
+                        React.createElement('button', {
+                            key: 'add-btn',
+                            onClick: () => setShowTradeForm(true),
+                            className: 'px-3 py-1.5 btn-primary rounded text-sm'
+                        }, '거래 추가')
+                    ]),
+                    
+                    React.createElement('div', {
+                        key: 'trades-list',
+                        className: 'metric-card overflow-hidden'
+                    }, [
+                        React.createElement('div', {
+                            key: 'table-header',
+                            className: 'hidden md:grid grid-cols-7 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-700'
+                        }, [
+                            React.createElement('div', { key: 'date' }, '날짜'),
+                            React.createElement('div', { key: 'entry' }, '입금'),
+                            React.createElement('div', { key: 'withdrawal' }, '출금'),
+                            React.createElement('div', { key: 'balance' }, '잔고'),
+                            React.createElement('div', { key: 'profit' }, '수익'),
+                            React.createElement('div', { key: 'memo' }, '메모'),
+                            React.createElement('div', { key: 'actions' }, '작업')
+                        ]),
+                        React.createElement('div', { key: 'table-body' },
+                            trades.map(trade =>
+                                React.createElement('div', {
+                                    key: trade.id,
+                                    className: 'md:grid md:grid-cols-7 md:gap-4 p-4 border-b hover:bg-gray-50 transition-colors'
+                                }, [
+                                    // 모바일 카드 형태
+                                    React.createElement('div', { 
+                                        key: 'mobile-card', 
+                                        className: 'md:hidden space-y-2'
+                                    }, [
+                                        React.createElement('div', { className: 'flex justify-between items-center' }, [
+                                            React.createElement('span', { className: 'text-sm font-medium' }, trade.date),
+                                            React.createElement('div', { className: 'flex gap-1' }, [
+                                                React.createElement('button', {
+                                                    key: 'edit-mobile',
+                                                    onClick: () => handleEditTrade(trade),
+                                                    className: 'text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded'
+                                                }, '수정'),
+                                                React.createElement('button', {
+                                                    key: 'delete-mobile',
+                                                    onClick: () => handleDeleteTrade(trade.id),
+                                                    className: 'text-xs px-2 py-1 bg-red-50 text-red-600 rounded'
+                                                }, '삭제')
+                                            ])
+                                        ]),
+                                        React.createElement('div', { className: 'grid grid-cols-2 gap-2 text-sm' }, [
+                                            trade.entry > 0 && React.createElement('div', {}, [
+                                                React.createElement('span', { className: 'text-gray-500' }, '입금: '),
+                                                React.createElement('span', {}, formatCurrency(trade.entry))
+                                            ]),
+                                            trade.withdrawal > 0 && React.createElement('div', {}, [
+                                                React.createElement('span', { className: 'text-gray-500' }, '출금: '),
+                                                React.createElement('span', {}, formatCurrency(trade.withdrawal))
+                                            ]),
+                                            React.createElement('div', {}, [
+                                                React.createElement('span', { className: 'text-gray-500' }, '잔고: '),
+                                                React.createElement('span', { className: 'font-medium' }, formatCurrency(trade.balance))
+                                            ]),
+                                            React.createElement('div', {}, [
+                                                React.createElement('span', { className: 'text-gray-500' }, '수익: '),
+                                                React.createElement('span', { 
+                                                    className: 'font-medium',
+                                                    style: { color: trade.profit >= 0 ? 'var(--accent)' : '#ef4444' }
+                                                }, formatCurrency(trade.profit))
+                                            ])
+                                        ]),
+                                        trade.memo && React.createElement('div', { className: 'text-sm text-gray-600' }, [
+                                            React.createElement('span', { className: 'text-gray-500' }, '메모: '),
+                                            React.createElement('span', {}, trade.memo)
+                                        ])
+                                    ]),
+                                    
+                                    // 데스크톱 테이블 형태
+                                    React.createElement('div', { key: 'date', className: 'hidden md:block text-sm' }, trade.date),
+                                    React.createElement('div', { key: 'entry', className: 'hidden md:block text-sm' }, trade.entry > 0 ? formatCurrency(trade.entry) : '-'),
+                                    React.createElement('div', { key: 'withdrawal', className: 'hidden md:block text-sm' }, trade.withdrawal > 0 ? formatCurrency(trade.withdrawal) : '-'),
+                                    React.createElement('div', { key: 'balance', className: 'hidden md:block text-sm font-medium' }, formatCurrency(trade.balance)),
+                                    React.createElement('div', { 
+                                        key: 'profit', 
+                                        className: 'hidden md:block text-sm font-medium',
+                                        style: { color: trade.profit >= 0 ? 'var(--accent)' : '#ef4444' }
+                                    }, formatCurrency(trade.profit)),
+                                    React.createElement('div', { key: 'memo', className: 'hidden md:block text-sm text-gray-600 truncate' }, trade.memo || '-'),
+                                    React.createElement('div', { key: 'actions', className: 'hidden md:flex gap-2' }, [
+                                        React.createElement('button', {
+                                            key: 'edit',
+                                            onClick: () => handleEditTrade(trade),
+                                            className: 'text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors'
+                                        }, '수정'),
+                                        React.createElement('button', {
+                                            key: 'delete',
+                                            onClick: () => handleDeleteTrade(trade.id),
+                                            className: 'text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors'
+                                        }, '삭제')
+                                    ])
+                                ])
+                            )
+                        )
+                    ]),
+                    
+                    showTradeForm && React.createElement('div', {
+                        key: 'trade-modal',
+                        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+                    }, [
+                        React.createElement('div', {
+                            key: 'modal',
+                            className: 'bg-white rounded-2xl p-6 w-full max-w-md mx-4'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, editingTrade ? '거래 수정' : '거래 추가'),
+                            React.createElement('div', { key: 'form', className: 'space-y-4' }, [
+                                React.createElement('div', { key: 'date-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '날짜'),
+                                    React.createElement('input', {
+                                        type: 'date',
+                                        value: currentTrade.date,
+                                        onChange: (e) => setCurrentTrade(prev => ({...prev, date: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'entry-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '입금'),
+                                    React.createElement('input', {
+                                        type: 'number',
+                                        value: currentTrade.entry,
+                                        onChange: (e) => setCurrentTrade(prev => ({...prev, entry: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '0'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'withdrawal-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '출금'),
+                                    React.createElement('input', {
+                                        type: 'number',
+                                        value: currentTrade.withdrawal,
+                                        onChange: (e) => setCurrentTrade(prev => ({...prev, withdrawal: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '0'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'balance-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '잔고'),
+                                    React.createElement('input', {
+                                        type: 'number',
+                                        value: currentTrade.balance,
+                                        onChange: (e) => setCurrentTrade(prev => ({...prev, balance: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '현재 잔고'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'memo-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '메모'),
+                                    React.createElement('input', {
+                                        type: 'text',
+                                        value: currentTrade.memo,
+                                        onChange: (e) => setCurrentTrade(prev => ({...prev, memo: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '거래 메모'
+                                    })
+                                ])
+                            ]),
+                            React.createElement('div', { key: 'buttons', className: 'flex gap-3 mt-6' }, [
+                                React.createElement('button', {
+                                    key: 'cancel',
+                                    onClick: () => {
+                                        setShowTradeForm(false);
+                                        setEditingTrade(null);
+                                        setCurrentTrade({
+                                            date: new Date().toISOString().split('T')[0],
+                                            entry: '', withdrawal: '', balance: '', memo: ''
+                                        });
+                                    },
+                                    className: 'flex-1 px-3 py-1.5 border rounded text-sm hover:bg-gray-50 transition-colors'
+                                }, '취소'),
+                                React.createElement('button', {
+                                    key: 'save',
+                                    onClick: handleSaveTrade,
+                                    className: 'flex-1 px-3 py-1.5 btn-primary rounded text-sm'
+                                }, '저장')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            const renderJournal = () => {
+                const days = getDaysInMonth(currentMonth);
+                const monthStr = currentMonth.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' });
+                
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header', className: 'flex justify-between items-center' }, [
+                        React.createElement('div', { key: 'title' }, [
+                            React.createElement('h1', { 
+                                className: 'text-3xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, '매매일지'),
+                            React.createElement('p', { 
+                                className: 'text-gray-600'
+                            }, '일별 매매 기록과 분석을 관리하세요')
+                        ]),
+                        React.createElement('div', { key: 'controls', className: 'flex gap-3' }, [
+                            React.createElement('div', { key: 'view-toggle', className: 'flex rounded-lg p-1 bg-gray-100' }, [
+                                React.createElement('button', {
+                                    key: 'calendar',
+                                    onClick: () => setViewMode('calendar'),
+                                    className: `px-3 py-1 text-sm rounded-md transition-colors ${
+                                        viewMode === 'calendar' ? 'bg-white shadow-sm' : 'text-gray-600'
+                                    }`
+                                }, '캘린더'),
+                                React.createElement('button', {
+                                    key: 'list',
+                                    onClick: () => setViewMode('list'),
+                                    className: `px-3 py-1 text-sm rounded-md transition-colors ${
+                                        viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-600'
+                                    }`
+                                }, '목록')
+                            ])
+                        ])
+                    ]),
+                    
+                    viewMode === 'calendar' ? 
+                    React.createElement('div', { key: 'calendar', className: 'metric-card overflow-hidden max-w-lg mx-auto' }, [
+                        // 캘린더 헤더
+                        React.createElement('div', { 
+                            key: 'calendar-header', 
+                            className: 'px-6 py-4 border-b'
+                        }, [
+                            React.createElement('div', { key: 'month-nav', className: 'flex justify-between items-center' }, [
+                                React.createElement('button', {
+                                    key: 'prev',
+                                    onClick: () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)),
+                                    className: 'p-2 hover:bg-gray-100 rounded text-base',
+                                    style: { color: 'var(--foreground)' }
+                                }, '‹'),
+                                React.createElement('h3', { 
+                                    className: 'text-base font-semibold',
+                                    style: { color: 'var(--foreground)' }
+                                }, monthStr),
+                                React.createElement('button', {
+                                    key: 'next',
+                                    onClick: () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)),
+                                    className: 'p-2 hover:bg-gray-100 rounded text-base',
+                                    style: { color: 'var(--foreground)' }
+                                }, '›')
+                            ])
+                        ]),
+                        // 요일 헤더
+                        React.createElement('div', { 
+                            key: 'weekdays', 
+                            className: 'grid grid-cols-7 border-b bg-gray-50'
+                        }, ['일', '월', '화', '수', '목', '금', '토'].map((day, index) => 
+                            React.createElement('div', { 
+                                key: index,
+                                className: 'py-3 text-sm font-medium text-center text-gray-600'
+                            }, day)
+                        )),
+                        // 캘린더 그리드
+                        React.createElement('div', { key: 'calendar-body', className: 'p-1' }, [
+                            React.createElement('div', { key: 'calendar-grid', className: 'grid grid-cols-7' },
+                            days.map((date, index) => {
+                                if (!date) {
+                                    return React.createElement('div', { 
+                                        key: index, 
+                                        className: 'h-14 w-full'
+                                    });
+                                }
+                                
+                                const dateStr = formatDateForJournal(date);
+                                const hasEntry = hasJournalEntry(date);
+                                const isSelected = dateStr === selectedDate;
+                                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                const dayOfWeek = date.getDay();
+                                const isPrevMonth = date.getMonth() !== currentMonth.getMonth();
+                                
+                                return React.createElement('button', {
+                                    key: dateStr,
+                                    onClick: () => {
+                                        if (!isPrevMonth) {
+                                            setSelectedDate(dateStr);
+                                            const existingEntry = journals.find(j => j.date === dateStr);
+                                            if (existingEntry) {
+                                                setJournalEntry(existingEntry.content);
+                                            } else {
+                                                setJournalEntry('');
+                                            }
+                                            setShowJournalForm(true);
+                                        }
+                                    },
+                                    className: `h-14 w-full text-sm transition-colors relative border-r border-b hover:bg-gray-50 flex items-center justify-center ${
+                                        isPrevMonth 
+                                            ? 'text-gray-300 cursor-not-allowed'
+                                            : isSelected 
+                                                ? 'bg-blue-50 text-blue-600 font-medium' 
+                                                : isToday
+                                                    ? 'bg-red-50 text-red-600 font-medium'
+                                                    : hasEntry
+                                                        ? 'bg-green-50 text-green-700'
+                                                        : 'text-gray-700'
+                                    }`,
+                                    style: { color: isPrevMonth ? '#d1d5db' : undefined }
+                                }, [
+                                    React.createElement('span', { 
+                                        key: 'day-number'
+                                    }, date.getDate()),
+                                    
+                                    hasEntry && !isPrevMonth && React.createElement('div', {
+                                        key: 'entry-indicator',
+                                        className: 'absolute bottom-1.5 right-1.5 w-2 h-2 bg-green-500 rounded-full'
+                                    })
+                                ]);
+                            })
+                            )
+                        ])
+                    ]) :
+                    
+                    React.createElement('div', { key: 'list', className: 'metric-card' }, [
+                        React.createElement('div', { key: 'list-header', className: 'p-4 border-b' }, [
+                            React.createElement('h3', { 
+                                className: 'font-semibold',
+                                style: { color: 'var(--foreground)' }
+                            }, '일지 목록')
+                        ]),
+                        journals.length > 0 ? React.createElement('div', { key: 'entries' },
+                            journals.map(entry =>
+                                React.createElement('div', {
+                                    key: entry.id,
+                                    className: 'p-4 border-b hover:bg-gray-50'
+                                }, [
+                                    React.createElement('div', { key: 'date', className: 'text-sm text-gray-500 mb-1' }, entry.date),
+                                    React.createElement('p', { key: 'content', className: 'text-gray-700' }, entry.content)
+                                ])
+                            )
+                        ) : React.createElement('div', {
+                            key: 'empty',
+                            className: 'p-8 text-center text-gray-500'
+                        }, '작성된 일지가 없습니다.')
+                    ]),
+                    
+                    showJournalForm && React.createElement('div', {
+                        key: 'journal-modal',
+                        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+                    }, [
+                        React.createElement('div', {
+                            key: 'modal',
+                            className: 'bg-white rounded-2xl p-6 w-full max-w-lg mx-4'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-xl font-bold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, `${selectedDate} 매매일지`),
+                            React.createElement('textarea', {
+                                key: 'textarea',
+                                value: journalEntry,
+                                onChange: (e) => setJournalEntry(e.target.value),
+                                className: 'w-full h-40 p-3 border rounded-lg resize-none',
+                                placeholder: '오늘의 매매 기록과 분석을 작성하세요...'
+                            }),
+                            React.createElement('div', { key: 'buttons', className: 'flex gap-3 mt-4' }, [
+                                React.createElement('button', {
+                                    key: 'cancel',
+                                    onClick: () => {
+                                        setShowJournalForm(false);
+                                        setJournalEntry('');
+                                    },
+                                    className: 'flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50'
+                                }, '취소'),
+                                React.createElement('button', {
+                                    key: 'save',
+                                    onClick: handleSaveJournalEntry,
+                                    className: 'flex-1 px-4 py-2 btn-primary rounded-lg'
+                                }, '저장')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            const renderAnalytics = () => {
+                const totalTrades = trades.length;
+                const profitTrades = trades.filter(t => (t.profit || 0) > 0);
+                const lossTrades = trades.filter(t => (t.profit || 0) < 0);
+                const breakEvenTrades = trades.filter(t => (t.profit || 0) === 0);
+                const winRate = totalTrades > 0 ? (profitTrades.length / totalTrades * 100) : 0;
+                const totalProfit = trades.reduce((sum, t) => sum + (t.profit || 0), 0);
+                const avgProfit = totalTrades > 0 ? totalProfit / totalTrades : 0;
+                const avgProfitTrade = profitTrades.length > 0 ? profitTrades.reduce((sum, t) => sum + t.profit, 0) / profitTrades.length : 0;
+                const avgLossTrade = lossTrades.length > 0 ? lossTrades.reduce((sum, t) => sum + Math.abs(t.profit), 0) / lossTrades.length : 0;
+
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header' }, [
+                        React.createElement('h1', { 
+                            className: 'text-3xl font-bold mb-2',
+                            style: { color: 'var(--foreground)' }
+                        }, '분석'),
+                        React.createElement('p', { 
+                            className: 'text-gray-600'
+                        }, '상세한 트레이딩 분석과 통계')
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'key-metrics',
+                        className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'total-trades',
+                            className: 'metric-card p-4'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '총 거래'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: 'var(--foreground)' }
+                            }, `${totalTrades}건`)
+                        ]),
+                        React.createElement('div', {
+                            key: 'win-rate',
+                            className: 'metric-card p-4'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '승률'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: winRate >= 50 ? 'var(--accent)' : '#ef4444' }
+                            }, `${winRate.toFixed(1)}%`)
+                        ]),
+                        React.createElement('div', {
+                            key: 'avg-profit',
+                            className: 'metric-card p-4'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '평균 수익'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: avgProfit >= 0 ? 'var(--accent)' : '#ef4444' }
+                            }, formatCurrency(avgProfit))
+                        ]),
+                        React.createElement('div', {
+                            key: 'profit-factor',
+                            className: 'metric-card p-4'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '손익비'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: 'var(--foreground)' }
+                            }, avgLossTrade !== 0 ? `${Math.abs(avgProfitTrade / avgLossTrade).toFixed(2)}` : '-')
+                        ]),
+                        React.createElement('div', {
+                            key: 'goal-progress',
+                            className: 'metric-card p-4'
+                        }, [
+                            React.createElement('h3', { className: 'text-sm font-medium text-gray-500' }, '목표 달성률'),
+                            React.createElement('p', { 
+                                className: 'text-2xl font-bold',
+                                style: { color: 'var(--accent)' }
+                            }, (() => {
+                                if (goals.length === 0) return '0.0%';
+                                const completedGoals = goals.filter(goal => {
+                                    let progress = 0;
+                                    let progressCount = 0;
+                                    
+                                    if (goal.targetAmount) {
+                                        const currentProfit = totalProfit;
+                                        const targetAmount = parseFloat(goal.targetAmount);
+                                        progress += Math.min((currentProfit / targetAmount) * 100, 100);
+                                        progressCount++;
+                                    }
+                                    
+                                    if (goal.targetWinRate) {
+                                        const currentWinRate = winRate;
+                                        const targetWinRate = parseFloat(goal.targetWinRate);
+                                        progress += Math.min((currentWinRate / targetWinRate) * 100, 100);
+                                        progressCount++;
+                                    }
+                                    
+                                    const goalProgress = progressCount > 0 ? progress / progressCount : 0;
+                                    return goalProgress >= 100;
+                                });
+                                const achievementRate = (completedGoals.length / goals.length) * 100;
+                                return `${achievementRate.toFixed(1)}%`;
+                            })())
+                        ])
+                    ]),
+                    
+                    window.Recharts && React.createElement('div', {
+                        key: 'charts-section',
+                        className: 'grid grid-cols-1 lg:grid-cols-2 gap-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'winrate-chart',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, '거래 결과 분석'),
+                            React.createElement('div', {
+                                key: 'chart-container',
+                                className: 'h-64 flex items-center justify-center'
+                            }, totalTrades > 0 ? React.createElement(window.Recharts.ResponsiveContainer, { width: '100%', height: '100%' },
+                                React.createElement(window.Recharts.PieChart, {}, [
+                                    React.createElement(window.Recharts.Pie, {
+                                        key: 'pie',
+                                        data: [
+                                            { name: '수익', value: profitTrades.length, fill: '#10b981' },
+                                            { name: '손실', value: lossTrades.length, fill: '#ef4444' },
+                                            { name: '무승부', value: breakEvenTrades.length, fill: '#9ca3af' }
+                                        ],
+                                        cx: '50%',
+                                        cy: '50%',
+                                        outerRadius: 80,
+                                        dataKey: 'value',
+                                        label: ({name, value}) => `${name}: ${value}`
+                                    }),
+                                    React.createElement(window.Recharts.Tooltip, { key: 'tooltip' })
+                                ])
+                            ) : React.createElement('p', { className: 'text-gray-500' }, '거래 데이터가 없습니다'))
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'monthly-chart',
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-lg font-semibold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, '월별 수익 현황'),
+                            React.createElement('div', {
+                                key: 'chart-container',
+                                className: 'h-64'
+                            }, totalTrades > 0 ? (() => {
+                                const monthlyProfits = {};
+                                trades.forEach(trade => {
+                                    const month = trade.date.substring(0, 7);
+                                    if (!monthlyProfits[month]) {
+                                        monthlyProfits[month] = 0;
+                                    }
+                                    monthlyProfits[month] += trade.profit || 0;
+                                });
+                                
+                                const monthlyData = Object.entries(monthlyProfits).map(([month, profit]) => ({
+                                    month: month,
+                                    profit: profit
+                                })).sort((a, b) => a.month.localeCompare(b.month));
+
+                                return React.createElement(window.Recharts.ResponsiveContainer, { width: '100%', height: '100%' },
+                                    React.createElement(window.Recharts.BarChart, { data: monthlyData }, [
+                                        React.createElement(window.Recharts.CartesianGrid, {
+                                            key: 'grid',
+                                            strokeDasharray: '3 3',
+                                            stroke: '#e0e7ff'
+                                        }),
+                                        React.createElement(window.Recharts.XAxis, {
+                                            key: 'x',
+                                            dataKey: 'month',
+                                            stroke: '#6b7280'
+                                        }),
+                                        React.createElement(window.Recharts.YAxis, {
+                                            key: 'y',
+                                            stroke: '#6b7280',
+                                            tickFormatter: (value) => formatCurrency(value)
+                                        }),
+                                        React.createElement(window.Recharts.Tooltip, {
+                                            key: 'tooltip',
+                                            formatter: (value) => [formatCurrency(value), '수익']
+                                        }),
+                                        React.createElement(window.Recharts.Bar, {
+                                            key: 'bar',
+                                            dataKey: 'profit',
+                                            fill: '#3b82f6'
+                                        })
+                                    ])
+                                );
+                            })() : React.createElement('div', { className: 'flex items-center justify-center h-full' },
+                                React.createElement('p', { className: 'text-gray-500' }, '거래 데이터가 없습니다')
+                            ))
+                        ])
+                    ]),
+
+                    React.createElement('div', {
+                        key: 'detailed-stats',
+                        className: 'metric-card p-6'
+                    }, [
+                        React.createElement('h3', {
+                            key: 'title',
+                            className: 'text-lg font-semibold mb-6',
+                            style: { color: 'var(--foreground)' }
+                        }, '상세 통계'),
+                        React.createElement('div', { key: 'stats-content', className: 'space-y-6' }, [
+                            React.createElement('div', { key: 'trade-analysis', className: 'space-y-3' }, [
+                                React.createElement('h4', {
+                                    className: 'font-medium text-sm text-gray-600 border-b pb-2',
+                                    style: { borderColor: 'var(--accent)' }
+                                }, '거래 분석'),
+                                React.createElement('div', { className: 'space-y-2' }, [
+                                    React.createElement('div', { key: 'avg-profit-trade', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '평균 수익 거래'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, formatCurrency(avgProfitTrade))
+                                    ]),
+                                    React.createElement('div', { key: 'avg-loss-trade', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '평균 손실 거래'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, formatCurrency(-avgLossTrade))
+                                    ]),
+                                    React.createElement('div', { key: 'max-profit', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '최대 수익'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, 
+                                            formatCurrency(Math.max(...trades.map(t => t.profit || 0), 0))
+                                        )
+                                    ]),
+                                    React.createElement('div', { key: 'max-loss', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '최대 손실'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, 
+                                            formatCurrency(Math.min(...trades.map(t => t.profit || 0), 0))
+                                        )
+                                    ])
+                                ])
+                            ]),
+                            React.createElement('div', { key: 'performance-analysis', className: 'space-y-3' }, [
+                                React.createElement('h4', {
+                                    className: 'font-medium text-sm text-gray-600 border-b pb-2',
+                                    style: { borderColor: 'var(--accent)' }
+                                }, '성과 분석'),
+                                React.createElement('div', { className: 'space-y-2' }, [
+                                    React.createElement('div', { key: 'total-return', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '총 수익률'),
+                                        React.createElement('span', { 
+                                            className: 'stat-value-compact',
+                                            style: { color: totalProfit >= 0 ? 'var(--accent)' : '#ef4444' }
+                                        }, `${((totalProfit / 1000000) * 100).toFixed(2)}%`)
+                                    ]),
+                                    React.createElement('div', { key: 'win-loss-ratio', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '승패 비율'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, 
+                                            `${profitTrades.length}승 ${lossTrades.length}패`
+                                        )
+                                    ]),
+                                    React.createElement('div', { key: 'profitable-days', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '수익 거래 비중'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, `${winRate.toFixed(1)}%`)
+                                    ]),
+                                    React.createElement('div', { key: 'avg-daily', className: 'compact-stat-item' }, [
+                                        React.createElement('span', { className: 'stat-label-compact' }, '일평균 수익'),
+                                        React.createElement('span', { className: 'stat-value-compact' }, formatCurrency(avgProfit))
+                                    ])
+                                ])
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            const renderStrategy = () => {
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header', className: 'flex justify-between items-center' }, [
+                        React.createElement('div', { key: 'title' }, [
+                            React.createElement('h1', { 
+                                className: 'text-3xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, '매매전략'),
+                            React.createElement('p', { 
+                                className: 'text-gray-600'
+                            }, '체계적인 매매 전략을 수립하고 관리하세요')
+                        ]),
+                        React.createElement('button', {
+                            key: 'add-btn',
+                            onClick: () => setShowStrategyForm(true),
+                            className: 'px-4 py-2 btn-primary rounded-lg'
+                        }, '전략 추가')
+                    ]),
+                    
+                    strategies.length > 0 ? React.createElement('div', {
+                        key: 'strategies-grid',
+                        className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                    }, strategies.map(strategy =>
+                        React.createElement('div', {
+                            key: strategy.id,
+                            className: 'metric-card p-6'
+                        }, [
+                            React.createElement('div', { key: 'header', className: 'flex justify-between items-start mb-4' }, [
+                                React.createElement('h3', { 
+                                    className: 'text-lg font-semibold',
+                                    style: { color: 'var(--foreground)' }
+                                }, strategy.name),
+                                React.createElement('div', { key: 'actions', className: 'flex gap-2' }, [
+                                    React.createElement('button', {
+                                        key: 'edit',
+                                        onClick: () => handleEditStrategy(strategy),
+                                        className: 'text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200'
+                                    }, '수정'),
+                                    React.createElement('button', {
+                                        key: 'delete',
+                                        onClick: () => handleDeleteStrategy(strategy.id),
+                                        className: 'text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200'
+                                    }, '삭제')
+                                ])
+                            ]),
+                            React.createElement('div', { key: 'risk-level', className: 'mb-3' }, [
+                                React.createElement('span', { 
+                                    className: `inline-block px-2 py-1 text-xs rounded-full ${
+                                        strategy.riskLevel === 'high' ? 'bg-red-100 text-red-700' :
+                                        strategy.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-green-100 text-green-700'
+                                    }`
+                                }, `${strategy.riskLevel === 'high' ? '고위험' : strategy.riskLevel === 'medium' ? '중위험' : '저위험'}`)
+                            ]),
+                            React.createElement('p', { 
+                                key: 'description', 
+                                className: 'text-sm text-gray-600 mb-4 line-clamp-3' 
+                            }, strategy.description || '설명이 없습니다.'),
+                            strategy.rules && React.createElement('div', { key: 'rules', className: 'border-t pt-3' }, [
+                                React.createElement('h4', { className: 'text-sm font-medium text-gray-700 mb-2' }, '매매 규칙'),
+                                React.createElement('p', { className: 'text-xs text-gray-600 line-clamp-3' }, strategy.rules)
+                            ]),
+                            React.createElement('div', { key: 'date', className: 'mt-4 pt-3 border-t text-xs text-gray-400' }, 
+                                `생성일: ${new Date(strategy.createdAt).toLocaleDateString('ko-KR')}`
+                            )
+                        ])
+                    )) : React.createElement('div', {
+                        key: 'empty',
+                        className: 'metric-card p-12 text-center'
+                    }, [
+                        React.createElement('h3', { 
+                            key: 'title',
+                            className: 'text-lg font-medium text-gray-500 mb-2' 
+                        }, '등록된 매매전략이 없습니다'),
+                        React.createElement('p', { 
+                            key: 'desc',
+                            className: 'text-sm text-gray-400 mb-4' 
+                        }, '체계적인 매매를 위해 전략을 추가해보세요'),
+                        React.createElement('button', {
+                            key: 'add-btn',
+                            onClick: () => setShowStrategyForm(true),
+                            className: 'px-4 py-2 btn-primary rounded-lg'
+                        }, '첫 번째 전략 추가')
+                    ]),
+                    
+                    showStrategyForm && React.createElement('div', {
+                        key: 'strategy-modal',
+                        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+                    }, [
+                        React.createElement('div', {
+                            key: 'modal',
+                            className: 'bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-xl font-bold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, editingStrategy ? '전략 수정' : '전략 추가'),
+                            React.createElement('div', { key: 'form', className: 'space-y-4' }, [
+                                React.createElement('div', { key: 'name-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '전략명'),
+                                    React.createElement('input', {
+                                        type: 'text',
+                                        value: currentStrategy.name,
+                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, name: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '전략명을 입력하세요'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'risk-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '위험도'),
+                                    React.createElement('select', {
+                                        value: currentStrategy.riskLevel,
+                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, riskLevel: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg'
+                                    }, [
+                                        React.createElement('option', { key: 'low', value: 'low' }, '저위험'),
+                                        React.createElement('option', { key: 'medium', value: 'medium' }, '중위험'),
+                                        React.createElement('option', { key: 'high', value: 'high' }, '고위험')
+                                    ])
+                                ]),
+                                React.createElement('div', { key: 'description-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '설명'),
+                                    React.createElement('textarea', {
+                                        value: currentStrategy.description,
+                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, description: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg h-24 resize-none',
+                                        placeholder: '전략에 대한 설명을 입력하세요'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'rules-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '매매 규칙'),
+                                    React.createElement('textarea', {
+                                        value: currentStrategy.rules,
+                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, rules: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg h-32 resize-none',
+                                        placeholder: '구체적인 매매 규칙을 입력하세요'
+                                    })
+                                ])
+                            ]),
+                            React.createElement('div', { key: 'buttons', className: 'flex gap-3 mt-6' }, [
+                                React.createElement('button', {
+                                    key: 'cancel',
+                                    onClick: () => {
+                                        setShowStrategyForm(false);
+                                        setEditingStrategy(null);
+                                        setCurrentStrategy({ name: '', description: '', rules: '', riskLevel: 'medium' });
+                                    },
+                                    className: 'flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50'
+                                }, '취소'),
+                                React.createElement('button', {
+                                    key: 'save',
+                                    onClick: handleSaveStrategy,
+                                    className: 'flex-1 px-4 py-2 btn-primary rounded-lg'
+                                }, '저장')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            const renderGoals = () => {
+                const calculateGoalProgress = (goal) => {
+                    if (!goal.targetAmount && !goal.targetWinRate) return 0;
+                    
+                    let progress = 0;
+                    let progressCount = 0;
+                    
+                    if (goal.targetAmount) {
+                        const currentProfit = stats.totalProfit;
+                        const targetAmount = parseFloat(goal.targetAmount);
+                        progress += Math.min((currentProfit / targetAmount) * 100, 100);
+                        progressCount++;
+                    }
+                    
+                    if (goal.targetWinRate) {
+                        const currentWinRate = stats.winRate;
+                        const targetWinRate = parseFloat(goal.targetWinRate);
+                        progress += Math.min((currentWinRate / targetWinRate) * 100, 100);
+                        progressCount++;
+                    }
+                    
+                    return progressCount > 0 ? progress / progressCount : 0;
+                };
+                
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header', className: 'flex justify-between items-center' }, [
+                        React.createElement('div', { key: 'title' }, [
+                            React.createElement('h1', { 
+                                className: 'text-3xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, '목표설정'),
+                            React.createElement('p', { 
+                                className: 'text-gray-600'
+                            }, '투자 목표를 설정하고 달성도를 추적하세요')
+                        ]),
+                        React.createElement('button', {
+                            key: 'add-btn',
+                            onClick: () => setShowGoalForm(true),
+                            className: 'px-4 py-2 btn-primary rounded-lg'
+                        }, '목표 추가')
+                    ]),
+                    
+                    goals.length > 0 ? React.createElement('div', {
+                        key: 'goals-grid',
+                        className: 'grid grid-cols-1 md:grid-cols-2 gap-6'
+                    }, goals.map(goal => {
+                        const progress = calculateGoalProgress(goal);
+                        const isCompleted = progress >= 100;
+                        const isOverdue = goal.deadline && new Date(goal.deadline) < new Date();
+                        
+                        return React.createElement('div', {
+                            key: goal.id,
+                            className: `metric-card p-6 ${isCompleted ? 'ring-2 ring-green-200' : isOverdue ? 'ring-2 ring-red-200' : ''}`
+                        }, [
+                            React.createElement('div', { key: 'header', className: 'flex justify-between items-start mb-4' }, [
+                                React.createElement('h3', { 
+                                    className: 'text-lg font-semibold',
+                                    style: { color: 'var(--foreground)' }
+                                }, goal.title),
+                                React.createElement('div', { key: 'actions', className: 'flex gap-2' }, [
+                                    React.createElement('button', {
+                                        key: 'edit',
+                                        onClick: () => handleEditGoal(goal),
+                                        className: 'text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200'
+                                    }, '수정'),
+                                    React.createElement('button', {
+                                        key: 'delete',
+                                        onClick: () => handleDeleteGoal(goal.id),
+                                        className: 'text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200'
+                                    }, '삭제')
+                                ])
+                            ]),
+                            
+                            React.createElement('div', { key: 'progress', className: 'mb-4' }, [
+                                React.createElement('div', { className: 'flex justify-between items-center mb-2' }, [
+                                    React.createElement('span', { className: 'text-sm font-medium text-gray-700' }, '진행률'),
+                                    React.createElement('span', { 
+                                        className: `text-sm font-bold ${isCompleted ? 'text-green-600' : 'text-gray-700'}`
+                                    }, `${progress.toFixed(1)}%`)
+                                ]),
+                                React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-3' }, [
+                                    React.createElement('div', {
+                                        className: `h-3 rounded-full transition-all duration-300 ${
+                                            isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                                        }`,
+                                        style: { width: `${Math.min(progress, 100)}%` }
+                                    })
+                                ])
+                            ]),
+                            
+                            React.createElement('div', { key: 'targets', className: 'space-y-2 mb-4' }, [
+                                goal.targetAmount && React.createElement('div', { key: 'amount', className: 'flex justify-between text-sm' }, [
+                                    React.createElement('span', { className: 'text-gray-600' }, '목표 수익'),
+                                    React.createElement('span', { className: 'font-medium' }, formatCurrency(goal.targetAmount))
+                                ]),
+                                goal.targetWinRate && React.createElement('div', { key: 'winrate', className: 'flex justify-between text-sm' }, [
+                                    React.createElement('span', { className: 'text-gray-600' }, '목표 승률'),
+                                    React.createElement('span', { className: 'font-medium' }, `${goal.targetWinRate}%`)
+                                ]),
+                                goal.deadline && React.createElement('div', { key: 'deadline', className: 'flex justify-between text-sm' }, [
+                                    React.createElement('span', { className: 'text-gray-600' }, '목표 날짜'),
+                                    React.createElement('span', { 
+                                        className: `font-medium ${isOverdue ? 'text-red-600' : ''}`
+                                    }, new Date(goal.deadline).toLocaleDateString('ko-KR'))
+                                ])
+                            ]),
+                            
+                            goal.description && React.createElement('p', { 
+                                key: 'description', 
+                                className: 'text-sm text-gray-600 mb-4 line-clamp-2' 
+                            }, goal.description),
+                            
+                            React.createElement('div', { key: 'status', className: 'flex items-center justify-between pt-3 border-t' }, [
+                                React.createElement('span', { 
+                                    className: `inline-block px-2 py-1 text-xs rounded-full ${
+                                        isCompleted ? 'bg-green-100 text-green-700' :
+                                        isOverdue ? 'bg-red-100 text-red-700' :
+                                        'bg-blue-100 text-blue-700'
+                                    }`
+                                }, isCompleted ? '달성완료' : isOverdue ? '기한만료' : '진행중'),
+                                React.createElement('span', { className: 'text-xs text-gray-400' }, 
+                                    `생성일: ${new Date(goal.createdAt).toLocaleDateString('ko-KR')}`
+                                )
+                            ])
+                        ]);
+                    })) : React.createElement('div', {
+                        key: 'empty',
+                        className: 'metric-card p-12 text-center'
+                    }, [
+                        React.createElement('h3', { 
+                            key: 'title',
+                            className: 'text-lg font-medium text-gray-500 mb-2' 
+                        }, '설정된 목표가 없습니다'),
+                        React.createElement('p', { 
+                            key: 'desc',
+                            className: 'text-sm text-gray-400 mb-4' 
+                        }, '체계적인 투자를 위해 목표를 설정해보세요'),
+                        React.createElement('button', {
+                            key: 'add-btn',
+                            onClick: () => setShowGoalForm(true),
+                            className: 'px-4 py-2 btn-primary rounded-lg'
+                        }, '첫 번째 목표 추가')
+                    ]),
+                    
+                    showGoalForm && React.createElement('div', {
+                        key: 'goal-modal',
+                        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+                    }, [
+                        React.createElement('div', {
+                            key: 'modal',
+                            className: 'bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: 'text-xl font-bold mb-4',
+                                style: { color: 'var(--foreground)' }
+                            }, editingGoal ? '목표 수정' : '목표 추가'),
+                            React.createElement('div', { key: 'form', className: 'space-y-4' }, [
+                                React.createElement('div', { key: 'title-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '목표명'),
+                                    React.createElement('input', {
+                                        type: 'text',
+                                        value: currentGoal.title,
+                                        onChange: (e) => setCurrentGoal(prev => ({...prev, title: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '목표명을 입력하세요'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'amount-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '목표 수익 (원)'),
+                                    React.createElement('input', {
+                                        type: 'number',
+                                        value: currentGoal.targetAmount,
+                                        onChange: (e) => setCurrentGoal(prev => ({...prev, targetAmount: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '1000000'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'winrate-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '목표 승률 (%)'),
+                                    React.createElement('input', {
+                                        type: 'number',
+                                        value: currentGoal.targetWinRate,
+                                        onChange: (e) => setCurrentGoal(prev => ({...prev, targetWinRate: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg',
+                                        placeholder: '70',
+                                        min: '0',
+                                        max: '100'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'deadline-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '목표 날짜'),
+                                    React.createElement('input', {
+                                        type: 'date',
+                                        value: currentGoal.deadline,
+                                        onChange: (e) => setCurrentGoal(prev => ({...prev, deadline: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg'
+                                    })
+                                ]),
+                                React.createElement('div', { key: 'description-field' }, [
+                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '설명'),
+                                    React.createElement('textarea', {
+                                        value: currentGoal.description,
+                                        onChange: (e) => setCurrentGoal(prev => ({...prev, description: e.target.value})),
+                                        className: 'w-full px-3 py-2 border rounded-lg h-24 resize-none',
+                                        placeholder: '목표에 대한 설명을 입력하세요'
+                                    })
+                                ])
+                            ]),
+                            React.createElement('div', { key: 'buttons', className: 'flex gap-3 mt-6' }, [
+                                React.createElement('button', {
+                                    key: 'cancel',
+                                    onClick: () => {
+                                        setShowGoalForm(false);
+                                        setEditingGoal(null);
+                                        setCurrentGoal({ title: '', targetAmount: '', targetWinRate: '', deadline: '', description: '' });
+                                    },
+                                    className: 'flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50'
+                                }, '취소'),
+                                React.createElement('button', {
+                                    key: 'save',
+                                    onClick: handleSaveGoal,
+                                    className: 'flex-1 px-4 py-2 btn-primary rounded-lg'
+                                }, '저장')
+                            ])
+                        ])
+                    ])
+                ]);
+            };
+            
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'dashboard': return renderDashboard();
+                    case 'trades': return renderTrades();
+                    case 'journal': return renderJournal();
+                    case 'analytics': return renderAnalytics();
+                    case 'strategy': return renderStrategy();
+                    case 'goals': return renderGoals();
+                    default: return React.createElement('div', { className: 'p-8 text-center' }, [
+                        React.createElement('h2', { key: 'title', className: 'text-2xl font-bold mb-4' }, '개발 중'),
+                        React.createElement('p', { key: 'desc' }, '이 기능은 곧 추가될 예정입니다.')
+                    ]);
+                }
+            };
+            
+            const sidebarItems = [
+                { id: 'dashboard', label: '대시보드', icon: '📊' },
+                { id: 'analytics', label: '분석', icon: '📈' },
+                { id: 'trades', label: '거래내역', icon: '💰' },
+                { id: 'journal', label: '매매일지', icon: '📝' },
+                { id: 'strategy', label: '매매전략', icon: '🎯' },
+                { id: 'goals', label: '목표설정', icon: '🏆' }
+            ];
+            
+            return React.createElement('div', { className: 'flex h-screen flex-col md:flex-row' }, [
+                React.createElement('div', {
+                    key: 'sidebar',
+                    className: 'w-full md:w-56 h-20 md:h-full sidebar-container flex flex-col md:flex-col order-2 md:order-1'
+                }, [
+                    React.createElement('div', {
+                        key: 'logo',
+                        className: 'hidden md:block p-4 border-b'
+                    }, [
+                        React.createElement('h1', {
+                            className: 'font-bold text-lg',
+                            style: { color: 'var(--foreground)' }
+                        }, 'Coin Tracker')
+                    ]),
+                    
+                    React.createElement('nav', {
+                        key: 'nav',
+                        className: 'flex-1 p-2 md:p-4'
+                    }, React.createElement('ul', { className: 'flex md:flex-col space-x-1 md:space-x-0 md:space-y-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0' }, 
+                        sidebarItems.map(item =>
+                            React.createElement('li', { key: item.id, className: 'flex-shrink-0 md:flex-shrink' },
+                                React.createElement('button', {
+                                    onClick: () => setActiveTab(item.id),
+                                    className: `w-16 md:w-full flex flex-col md:flex-row items-center md:gap-2.5 px-2 py-2 md:px-3 md:py-2.5 rounded-lg text-center md:text-left text-xs md:text-sm transition-colors ${
+                                        activeTab === item.id 
+                                            ? 'bg-blue-100 text-blue-700 font-medium' 
+                                            : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }, [
+                                    React.createElement('span', { 
+                                        key: 'icon', 
+                                        className: 'text-base md:text-base flex-shrink-0 mb-1 md:mb-0'
+                                    }, item.icon),
+                                    React.createElement('span', { 
+                                        key: 'label', 
+                                        className: 'text-xs md:text-sm leading-tight'
+                                    }, item.label)
+                                ])
+                            )
+                        )
+                    )),
+                    
+                    React.createElement('div', {
+                        key: 'login-section',
+                        className: 'hidden md:block p-4 border-t'
+                    }, isLoggedIn ? 
+                        React.createElement('div', {
+                            className: 'space-y-3'
+                        }, [
+                            React.createElement('div', {
+                                key: 'user-info',
+                                className: 'p-3 bg-blue-50 rounded-lg'
+                            }, [
+                                React.createElement('p', { 
+                                    key: 'name', 
+                                    className: 'font-medium text-sm',
+                                    style: { color: 'var(--foreground)' }
+                                }, user?.name || '사용자'),
+                                React.createElement('p', { 
+                                    key: 'email', 
+                                    className: 'text-xs text-gray-500' 
+                                }, user?.email || '')
+                            ]),
+                            React.createElement('button', {
+                                key: 'logout',
+                                onClick: handleLogout,
+                                className: 'w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border rounded-lg hover:bg-gray-50 transition-colors'
+                            }, '로그아웃')
+                        ]) :
+                        React.createElement('button', {
+                            onClick: () => setShowLoginModal(true),
+                            className: 'w-full btn-primary'
+                        }, '로그인')
+                    )
+                ]),
+                
+                React.createElement('div', {
+                    key: 'main',
+                    className: 'flex-1 overflow-auto p-3 md:p-6 order-1 md:order-2'
+                }, renderContent()),
+                
+                showLoginModal && renderLoginModal()
+            ]);
+        }
+        
+        try {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(React.createElement(CoinTradingApp));
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 40px; text-align: center; color: #374151;">
+                    <h1>🚨 오류 발생</h1>
+                    <p>애플리케이션 로딩 중 오류가 발생했습니다.</p>
+                    <pre>${error.message}</pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
