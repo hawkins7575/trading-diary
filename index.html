@@ -7,16 +7,15 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/convex@1.16.2/dist/browser.js" onload="console.log('Convex script loaded from jsDelivr')" onerror="console.error('Convex script failed to load from jsDelivr')"></script>
-    <script src="https://unpkg.com/convex@1.16.2/dist/browser.js" onload="console.log('Convex script loaded from unpkg as fallback')" onerror="console.error('Convex script fallback also failed')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.52.1/dist/umd/supabase.js" onload="console.log('Supabase script loaded')" onerror="console.error('Supabase script failed to load')"></script>
     <script>
-        // Recharts 로딩 확인
+        // 라이브러리 로딩 확인
         window.addEventListener('load', function() {
             console.log('Recharts loaded:', !!window.Recharts);
             if (window.Recharts) {
                 console.log('Available components:', Object.keys(window.Recharts));
             }
-            console.log('Convex loaded:', !!window.Convex);
+            console.log('Supabase loaded:', !!window.supabase);
         });
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -85,52 +84,50 @@
     <div id="root"></div>
     
     <script>
-        // Convex 클라이언트 초기화
-        let convexClient = null;
+        // Supabase 클라이언트 초기화
+        let supabaseClient = null;
         
-        function initializeConvex() {
-            console.log('Initializing Convex...');
-            console.log('window.Convex:', !!window.Convex);
+        function initializeSupabase() {
+            console.log('Initializing Supabase...');
+            console.log('window.supabase:', !!window.supabase);
             
-            if (window.Convex && window.Convex.ConvexHttpClient) {
+            if (window.supabase) {
                 try {
-                    const CONVEX_URL = "https://superb-walrus-453.convex.cloud";
-                    convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
-                    window.convex = convexClient;
-                    console.log('Convex client initialized successfully with URL:', CONVEX_URL);
+                    // TODO: 실제 Supabase 프로젝트 설정값으로 교체 필요
+                    const SUPABASE_URL = "https://your-project.supabase.co";
+                    const SUPABASE_ANON_KEY = "your-anon-key";
                     
-                    // 연결 테스트 (간단한 쿼리)
-                    setTimeout(() => {
-                        if (window.convex) {
-                            console.log('Convex client is ready for use');
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    window.db = supabaseClient;
+                    console.log('Supabase client initialized successfully');
+                    
+                    // 연결 테스트
+                    setTimeout(async () => {
+                        try {
+                            const { data, error } = await supabaseClient.from('users').select('count', { count: 'exact', head: true });
+                            if (error && error.code !== 'PGRST116') { // 테이블이 없을 수 있음
+                                console.log('Supabase connection test - table might not exist yet:', error.message);
+                            } else {
+                                console.log('Supabase connection test successful');
+                            }
+                        } catch (error) {
+                            console.log('Supabase connection test:', error.message);
                         }
                     }, 1000);
                 } catch (error) {
-                    console.error('Error initializing Convex client:', error);
-                    window.convex = null;
+                    console.error('Error initializing Supabase client:', error);
+                    window.db = null;
                 }
             } else {
-                console.error('Convex library not loaded properly');
-                console.log('Available window.Convex methods:', window.Convex ? Object.keys(window.Convex) : 'None');
-                window.convex = null;
-                
-                // 재시도 로직
-                if (!window.convexRetryCount) {
-                    window.convexRetryCount = 0;
-                }
-                
-                if (window.convexRetryCount < 3) {
-                    window.convexRetryCount++;
-                    console.log(`Retrying Convex initialization (${window.convexRetryCount}/3)...`);
-                    setTimeout(initializeConvex, 2000);
-                }
+                console.warn('Supabase library not loaded, using localStorage only');
+                window.db = null;
             }
         }
         
         // DOM 로드 완료 후 초기화
         window.addEventListener('load', function() {
             console.log('Window loaded, checking libraries...');
-            initializeConvex();
+            initializeSupabase();
         });
         
         const { useState, useEffect } = React;
@@ -146,8 +143,8 @@
                 const saved = localStorage.getItem('trading-diary-auth');
                 if (saved) {
                     const authData = JSON.parse(saved);
-                    // Convex와 로컬 인증 모두 허용
-                    return (authData.authType === 'convex' || authData.authType === 'local') ? authData.isLoggedIn : false;
+                    // Supabase와 로컬 인증 모두 허용
+                    return (authData.authType === 'supabase' || authData.authType === 'local') ? authData.isLoggedIn : false;
                 }
                 return false;
             });
@@ -155,8 +152,8 @@
                 const saved = localStorage.getItem('trading-diary-auth');
                 if (saved) {
                     const authData = JSON.parse(saved);
-                    // Convex와 로컬 인증 모두 허용
-                    return (authData.authType === 'convex' || authData.authType === 'local') ? authData.user : null;
+                    // Supabase와 로컬 인증 모두 허용
+                    return (authData.authType === 'supabase' || authData.authType === 'local') ? authData.user : null;
                 }
                 return null;
             });
@@ -431,23 +428,66 @@
                 localStorage.setItem(userKey, JSON.stringify(userData));
             };
 
-            // Convex에서 사용자 데이터 로딩
-            const loadUserDataFromConvex = async (userId) => {
+            // Supabase에서 사용자 데이터 로딩
+            const loadUserDataFromSupabase = async (userId) => {
                 try {
-                    const [userTrades, userJournals, userStrategies, userGoals] = await Promise.all([
-                        window.convex.query("trades:getUserTrades", { userId }),
-                        window.convex.query("journals:getUserJournals", { userId }),
-                        window.convex.query("strategies:getUserStrategies", { userId }),
-                        window.convex.query("goals:getUserGoals", { userId })
+                    const [tradesResult, journalsResult, strategiesResult, goalsResult] = await Promise.all([
+                        window.db.from('trades').select('*').eq('user_id', userId).order('date', { ascending: false }),
+                        window.db.from('journals').select('*').eq('user_id', userId).order('date', { ascending: false }),
+                        window.db.from('strategies').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+                        window.db.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false })
                     ]);
                     
-                    setTrades(userTrades || []);
-                    setJournals(userJournals || []);
-                    setStrategies(userStrategies || []);
-                    setGoals(userGoals || []);
+                    // 데이터 형식을 로컬 형식에 맞게 변환
+                    const trades = tradesResult.data?.map(trade => ({
+                        id: trade.id,
+                        date: trade.date,
+                        entry: trade.entry,
+                        withdrawal: trade.withdrawal,
+                        balance: trade.balance,
+                        profit: trade.profit,
+                        memo: trade.memo || ''
+                    })) || [];
+                    
+                    const journals = journalsResult.data?.map(journal => ({
+                        id: journal.id,
+                        date: journal.date,
+                        content: journal.content,
+                        mood: journal.mood
+                    })) || [];
+                    
+                    const strategies = strategiesResult.data?.map(strategy => ({
+                        id: strategy.id,
+                        name: strategy.name,
+                        description: strategy.description,
+                        buyCriteria: strategy.buy_criteria,
+                        sellCriteria: strategy.sell_criteria,
+                        moneyManagement: strategy.money_management,
+                        stopLoss: strategy.stop_loss,
+                        technicalIndicators: strategy.technical_indicators,
+                        riskLevel: strategy.risk_level,
+                        timeframe: strategy.timeframe,
+                        targetReturn: strategy.target_return,
+                        maxDrawdown: strategy.max_drawdown
+                    })) || [];
+                    
+                    const goals = goalsResult.data?.map(goal => ({
+                        id: goal.id,
+                        title: goal.title,
+                        targetAmount: goal.target_amount,
+                        targetWinRate: goal.target_win_rate,
+                        deadline: goal.deadline,
+                        description: goal.description,
+                        isCompleted: goal.is_completed
+                    })) || [];
+                    
+                    setTrades(trades);
+                    setJournals(journals);
+                    setStrategies(strategies);
+                    setGoals(goals);
                 } catch (error) {
-                    console.error('Error loading user data from Convex:', error);
-                    // Convex 실패시 로컬 데이터로 fallback
+                    console.error('Error loading user data from Supabase:', error);
+                    // Supabase 실패시 로컬 데이터로 fallback
                     if (user?.email) {
                         loadUserData(user.email);
                     }
@@ -472,9 +512,9 @@
                 }
 
                 try {
-                    // Convex 서버 인증 시도, 실패 시 로컬 모드로 대체
-                    if (!window.convex) {
-                        console.warn('Convex not available, using local authentication mode');
+                    // Supabase 인증 시도, 실패 시 로컬 모드로 대체
+                    if (!window.db) {
+                        console.warn('Supabase not available, using local authentication mode');
                         
                         // 로컬 모드: 간단한 이메일 기반 인증
                         const localUsers = JSON.parse(localStorage.getItem('trading-diary-local-users') || '{}');
@@ -507,38 +547,40 @@
                         }
                     }
                     
-                    console.log('Attempting login with Convex for:', email);
+                    console.log('Attempting login with Supabase for:', email);
 
-                    const result = await window.convex.mutation("auth:signIn", { 
-                        email, 
-                        password 
+                    const { data, error } = await window.db.auth.signInWithPassword({
+                        email: email,
+                        password: password
                     });
                     
-                    if (result.success) {
+                    if (error) {
+                        setError('이메일 또는 비밀번호가 잘못되었습니다.');
+                        return;
+                    }
+                    
+                    if (data.user) {
                         const userData = {
-                            id: result.user.id,
-                            name: result.user.name,
-                            email: result.user.email,
+                            id: data.user.id,
+                            name: data.user.user_metadata?.name || email.split('@')[0],
+                            email: data.user.email,
                             avatar: '👤'
                         };
                         
-                        // Convex에서 사용자 데이터 로드
-                        await loadUserDataFromConvex(result.user.id);
+                        // Supabase에서 사용자 데이터 로드
+                        await loadUserDataFromSupabase(data.user.id);
                         
                         setUser(userData);
                         setIsLoggedIn(true);
                         setShowLoginModal(false);
                         setError('');
                         
-                        // localStorage에 로그인 상태 저장 (Convex 사용자만)
+                        // localStorage에 로그인 상태 저장
                         localStorage.setItem('trading-diary-auth', JSON.stringify({
                             isLoggedIn: true,
                             user: userData,
-                            authType: 'convex'
+                            authType: 'supabase'
                         }));
-                    } else {
-                        setError('이메일 또는 비밀번호가 잘못되었습니다.');
-                        return;
                     }
                 } catch (error) {
                     console.error('Login error:', error);
@@ -569,9 +611,9 @@
                 }
 
                 try {
-                    // Convex 서버 회원가입 시도, 실패 시 로컬 모드로 대체
-                    if (!window.convex) {
-                        console.warn('Convex not available, using local registration mode');
+                    // Supabase 회원가입 시도, 실패 시 로컬 모드로 대체
+                    if (!window.db) {
+                        console.warn('Supabase not available, using local registration mode');
                         
                         // 로컬 모드: localStorage에 사용자 저장
                         const localUsers = JSON.parse(localStorage.getItem('trading-diary-local-users') || '{}');
@@ -618,17 +660,26 @@
                         return;
                     }
                     
-                    console.log('Attempting signup with Convex for:', email);
+                    console.log('Attempting signup with Supabase for:', email);
 
-                    const result = await window.convex.mutation("auth:signUp", { 
-                        email, 
-                        password,
-                        name: email.split('@')[0]
+                    const { data, error } = await window.db.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            data: {
+                                name: email.split('@')[0]
+                            }
+                        }
                     });
                     
-                    if (result.success) {
+                    if (error) {
+                        setError(error.message || '회원가입에 실패했습니다.');
+                        return;
+                    }
+                    
+                    if (data.user) {
                         const userData = {
-                            id: result.userId,
+                            id: data.user.id,
                             name: email.split('@')[0],
                             email: email,
                             avatar: '👤'
@@ -645,17 +696,14 @@
                         setShowLoginModal(false);
                         setError('');
                         
-                        // localStorage에 로그인 상태 저장 (Convex 사용자만)
+                        // localStorage에 로그인 상태 저장
                         localStorage.setItem('trading-diary-auth', JSON.stringify({
                             isLoggedIn: true,
                             user: userData,
-                            authType: 'convex'
+                            authType: 'supabase'
                         }));
                         
-                        alert('회원가입이 완료되었습니다!');
-                    } else {
-                        setError(result.error || '회원가입에 실패했습니다.');
-                        return;
+                        alert('회원가입이 완료되었습니다! 이메일 확인을 해주세요.');
                     }
                 } catch (error) {
                     console.error('Signup error:', error);
@@ -692,37 +740,46 @@
                     profit: parseFloat(profit.toFixed(2))
                 };
                 
-                // Convex 동기화 시도
-                if (window.convex && user?.id) {
+                // Supabase 동기화 시도
+                if (window.db && user?.id && user.id !== user.email) { // Supabase 사용자인 경우만
                     try {
                         if (editingTrade) {
                             // 수정의 경우
-                            await window.convex.mutation("trades:updateTrade", {
-                                tradeId: editingTrade.id,
-                                userId: user.id,
-                                date: newTrade.date,
-                                entry: newTrade.entry,
-                                withdrawal: newTrade.withdrawal,
-                                balance: newTrade.balance,
-                                profit: newTrade.profit,
-                                memo: newTrade.memo || ""
-                            });
+                            const { error } = await window.db
+                                .from('trades')
+                                .update({
+                                    date: newTrade.date,
+                                    entry: newTrade.entry,
+                                    withdrawal: newTrade.withdrawal,
+                                    balance: newTrade.balance,
+                                    profit: newTrade.profit,
+                                    memo: newTrade.memo || "",
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', editingTrade.id)
+                                .eq('user_id', user.id);
+                            
+                            if (error) throw error;
                         } else {
                             // 새 거래 추가
-                            await window.convex.mutation("trades:createTrade", {
-                                userId: user.id,
-                                date: newTrade.date,
-                                entry: newTrade.entry,
-                                withdrawal: newTrade.withdrawal,
-                                balance: newTrade.balance,
-                                profit: newTrade.profit,
-                                memo: newTrade.memo || ""
-                            });
+                            const { error } = await window.db
+                                .from('trades')
+                                .insert({
+                                    user_id: user.id,
+                                    date: newTrade.date,
+                                    entry: newTrade.entry,
+                                    withdrawal: newTrade.withdrawal,
+                                    balance: newTrade.balance,
+                                    profit: newTrade.profit,
+                                    memo: newTrade.memo || ""
+                                });
+                            
+                            if (error) throw error;
                         }
-                        console.log('Trade synced to Convex successfully');
+                        console.log('Trade synced to Supabase successfully');
                     } catch (error) {
-                        console.error('Error syncing trade to Convex:', error);
-                        // Convex 실패 시 로컬만 저장하고 계속 진행
+                        console.error('Error syncing trade to Supabase:', error);
+                        // Supabase 실패 시 로컬만 저장하고 계속 진행
                     }
                 }
                 
