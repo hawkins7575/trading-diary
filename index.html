@@ -159,6 +159,7 @@
             });
             const [isSignUp, setIsSignUp] = useState(false);
             const [error, setError] = useState('');
+            const [showUserMenu, setShowUserMenu] = useState(false);
             
             // 패턴 분석 및 체크리스트 상수
             const TRADE_TAGS = {
@@ -3094,9 +3095,12 @@
                     
                     React.createElement('nav', {
                         key: 'nav',
-                        className: 'flex-1 p-2 md:p-4'
-                    }, React.createElement('ul', { className: 'flex md:flex-col space-x-1 md:space-x-0 md:space-y-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0' }, 
-                        sidebarItems.map(item =>
+                        className: 'flex-1 p-2 md:p-4 flex md:block'
+                    }, [
+                        React.createElement('ul', { 
+                            key: 'nav-items',
+                            className: 'flex md:flex-col space-x-1 md:space-x-0 md:space-y-1 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 flex-1' 
+                        }, sidebarItems.map(item =>
                             React.createElement('li', { key: item.id, className: 'flex-shrink-0 md:flex-shrink' },
                                 React.createElement('button', {
                                     onClick: () => setActiveTab(item.id),
@@ -3118,6 +3122,28 @@
                             )
                         )
                     )),
+                        
+                        // 모바일 로그인 버튼
+                        React.createElement('div', {
+                            key: 'mobile-login',
+                            className: 'block md:hidden flex-shrink-0 ml-2'
+                        }, isLoggedIn ? 
+                            React.createElement('button', {
+                                onClick: () => setShowUserMenu(!showUserMenu),
+                                className: 'w-16 flex flex-col items-center px-2 py-2 rounded-lg text-center text-xs bg-blue-100 text-blue-700'
+                            }, [
+                                React.createElement('span', { key: 'icon', className: 'text-base mb-1' }, '👤'),
+                                React.createElement('span', { key: 'label', className: 'text-xs leading-tight' }, '계정')
+                            ]) :
+                            React.createElement('button', {
+                                onClick: () => setShowLoginModal(true),
+                                className: 'w-16 flex flex-col items-center px-2 py-2 rounded-lg text-center text-xs text-gray-600 hover:bg-gray-100'
+                            }, [
+                                React.createElement('span', { key: 'icon', className: 'text-base mb-1' }, '☁️'),
+                                React.createElement('span', { key: 'label', className: 'text-xs leading-tight' }, '로그인')
+                            ])
+                        )
+                    ]),
                     
                     React.createElement('div', {
                         key: 'login-section',
@@ -3165,7 +3191,48 @@
                     className: 'flex-1 overflow-auto p-3 md:p-6 order-1 md:order-2'
                 }, renderContent()),
                 
-                showLoginModal && renderLoginModal()
+                showLoginModal && renderLoginModal(),
+                
+                // 모바일 사용자 메뉴 드롭다운
+                showUserMenu && isLoggedIn && React.createElement('div', {
+                    key: 'mobile-user-menu',
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 md:hidden',
+                    onClick: () => setShowUserMenu(false)
+                }, [
+                    React.createElement('div', {
+                        key: 'menu',
+                        className: 'bg-white rounded-t-2xl p-6 w-full max-w-md mx-4 mb-0',
+                        onClick: (e) => e.stopPropagation()
+                    }, [
+                        React.createElement('div', {
+                            key: 'user-info',
+                            className: 'p-4 bg-blue-50 rounded-lg mb-4'
+                        }, [
+                            React.createElement('p', { 
+                                key: 'name', 
+                                className: 'font-medium text-lg',
+                                style: { color: 'var(--foreground)' }
+                            }, user?.name || '사용자'),
+                            React.createElement('p', { 
+                                key: 'email', 
+                                className: 'text-sm text-gray-500' 
+                            }, user?.email || '')
+                        ]),
+                        React.createElement('button', {
+                            key: 'logout',
+                            onClick: () => {
+                                handleLogout();
+                                setShowUserMenu(false);
+                            },
+                            className: 'w-full px-4 py-3 text-base text-gray-600 hover:text-gray-800 border rounded-lg hover:bg-gray-50 transition-colors'
+                        }, '로그아웃'),
+                        React.createElement('button', {
+                            key: 'close',
+                            onClick: () => setShowUserMenu(false),
+                            className: 'w-full px-4 py-3 text-base text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors mt-2'
+                        }, '닫기')
+                    ])
+                ])
             ]);
         }
         
