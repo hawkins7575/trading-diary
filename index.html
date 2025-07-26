@@ -133,7 +133,17 @@
             // 매매전략 관련
             const [showStrategyForm, setShowStrategyForm] = useState(false);
             const [currentStrategy, setCurrentStrategy] = useState({
-                name: '', description: '', rules: '', riskLevel: 'medium'
+                name: '', 
+                description: '', 
+                buyCriteria: '',
+                sellCriteria: '',
+                moneyManagement: '',
+                stopLoss: '',
+                technicalIndicators: '',
+                riskLevel: 'medium',
+                timeframe: '',
+                targetReturn: '',
+                maxDrawdown: ''
             });
             const [editingStrategy, setEditingStrategy] = useState(null);
             const [strategies, setStrategies] = useState(() => {
@@ -433,7 +443,19 @@
                     setStrategies(prev => [...prev, newStrategy]);
                 }
                 
-                setCurrentStrategy({ name: '', description: '', rules: '', riskLevel: 'medium' });
+                setCurrentStrategy({ 
+                    name: '', 
+                    description: '', 
+                    buyCriteria: '',
+                    sellCriteria: '',
+                    moneyManagement: '',
+                    stopLoss: '',
+                    technicalIndicators: '',
+                    riskLevel: 'medium',
+                    timeframe: '',
+                    targetReturn: '',
+                    maxDrawdown: ''
+                });
                 setEditingStrategy(null);
                 setShowStrategyForm(false);
             };
@@ -1686,53 +1708,142 @@
                     }, [
                         React.createElement('div', {
                             key: 'modal',
-                            className: 'bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto'
+                            className: 'bg-white rounded-2xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto'
                         }, [
                             React.createElement('h3', {
                                 key: 'title',
                                 className: 'text-xl font-bold mb-4',
                                 style: { color: 'var(--foreground)' }
                             }, editingStrategy ? '전략 수정' : '전략 추가'),
-                            React.createElement('div', { key: 'form', className: 'space-y-4' }, [
-                                React.createElement('div', { key: 'name-field' }, [
-                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '전략명'),
-                                    React.createElement('input', {
-                                        type: 'text',
-                                        value: currentStrategy.name,
-                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, name: e.target.value})),
-                                        className: 'w-full px-3 py-2 border rounded-lg',
-                                        placeholder: '전략명을 입력하세요'
-                                    })
-                                ]),
-                                React.createElement('div', { key: 'risk-field' }, [
-                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '위험도'),
-                                    React.createElement('select', {
-                                        value: currentStrategy.riskLevel,
-                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, riskLevel: e.target.value})),
-                                        className: 'w-full px-3 py-2 border rounded-lg'
-                                    }, [
-                                        React.createElement('option', { key: 'low', value: 'low' }, '저위험'),
-                                        React.createElement('option', { key: 'medium', value: 'medium' }, '중위험'),
-                                        React.createElement('option', { key: 'high', value: 'high' }, '고위험')
+                            React.createElement('div', { key: 'form', className: 'space-y-6' }, [
+                                // 기본 정보
+                                React.createElement('div', { key: 'basic-info', className: 'space-y-4' }, [
+                                    React.createElement('h4', { className: 'text-lg font-semibold text-gray-700 border-b pb-2' }, '기본 정보'),
+                                    React.createElement('div', { key: 'name-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '전략명 *'),
+                                        React.createElement('input', {
+                                            type: 'text',
+                                            value: currentStrategy.name,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, name: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '예: RSI 역전 전략'
+                                        })
+                                    ]),
+                                    React.createElement('div', { key: 'description-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '전략 설명'),
+                                        React.createElement('textarea', {
+                                            value: currentStrategy.description,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, description: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg h-20 resize-none focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '전략의 핵심 아이디어와 목적을 간단히 설명하세요'
+                                        })
                                     ])
                                 ]),
-                                React.createElement('div', { key: 'description-field' }, [
-                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '설명'),
-                                    React.createElement('textarea', {
-                                        value: currentStrategy.description,
-                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, description: e.target.value})),
-                                        className: 'w-full px-3 py-2 border rounded-lg h-24 resize-none',
-                                        placeholder: '전략에 대한 설명을 입력하세요'
-                                    })
+
+                                // 매수/매도 기준
+                                React.createElement('div', { key: 'trading-criteria', className: 'space-y-4' }, [
+                                    React.createElement('h4', { className: 'text-lg font-semibold text-gray-700 border-b pb-2' }, '매매 기준'),
+                                    React.createElement('div', { key: 'buy-criteria-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '매수 기준 *'),
+                                        React.createElement('textarea', {
+                                            value: currentStrategy.buyCriteria,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, buyCriteria: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg h-24 resize-none focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '예: RSI 30 이하 + 이동평균선 지지 + 거래량 증가'
+                                        })
+                                    ]),
+                                    React.createElement('div', { key: 'sell-criteria-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '매도 기준 *'),
+                                        React.createElement('textarea', {
+                                            value: currentStrategy.sellCriteria,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, sellCriteria: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg h-24 resize-none focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '예: 목표가 도달 시 또는 RSI 70 이상'
+                                        })
+                                    ])
                                 ]),
-                                React.createElement('div', { key: 'rules-field' }, [
-                                    React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '매매 규칙'),
-                                    React.createElement('textarea', {
-                                        value: currentStrategy.rules,
-                                        onChange: (e) => setCurrentStrategy(prev => ({...prev, rules: e.target.value})),
-                                        className: 'w-full px-3 py-2 border rounded-lg h-32 resize-none',
-                                        placeholder: '구체적인 매매 규칙을 입력하세요'
-                                    })
+
+                                // 리스크 관리
+                                React.createElement('div', { key: 'risk-management', className: 'space-y-4' }, [
+                                    React.createElement('h4', { className: 'text-lg font-semibold text-gray-700 border-b pb-2' }, '리스크 관리'),
+                                    React.createElement('div', { key: 'grid-layout', className: 'grid grid-cols-1 md:grid-cols-2 gap-4' }, [
+                                        React.createElement('div', { key: 'risk-level-field' }, [
+                                            React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '위험도'),
+                                            React.createElement('select', {
+                                                value: currentStrategy.riskLevel,
+                                                onChange: (e) => setCurrentStrategy(prev => ({...prev, riskLevel: e.target.value})),
+                                                className: 'w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500'
+                                            }, [
+                                                React.createElement('option', { key: 'low', value: 'low' }, '저위험'),
+                                                React.createElement('option', { key: 'medium', value: 'medium' }, '중위험'),
+                                                React.createElement('option', { key: 'high', value: 'high' }, '고위험')
+                                            ])
+                                        ]),
+                                        React.createElement('div', { key: 'timeframe-field' }, [
+                                            React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '투자 기간'),
+                                            React.createElement('input', {
+                                                type: 'text',
+                                                value: currentStrategy.timeframe,
+                                                onChange: (e) => setCurrentStrategy(prev => ({...prev, timeframe: e.target.value})),
+                                                className: 'w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500',
+                                                placeholder: '예: 단기 (1-7일)'
+                                            })
+                                        ])
+                                    ]),
+                                    React.createElement('div', { key: 'stop-loss-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '손절 기준'),
+                                        React.createElement('textarea', {
+                                            value: currentStrategy.stopLoss,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, stopLoss: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg h-20 resize-none focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '예: 매수가 대비 -5% 또는 이동평균선 이탈 시'
+                                        })
+                                    ]),
+                                    React.createElement('div', { key: 'grid-layout-2', className: 'grid grid-cols-1 md:grid-cols-2 gap-4' }, [
+                                        React.createElement('div', { key: 'target-return-field' }, [
+                                            React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '목표 수익률'),
+                                            React.createElement('input', {
+                                                type: 'text',
+                                                value: currentStrategy.targetReturn,
+                                                onChange: (e) => setCurrentStrategy(prev => ({...prev, targetReturn: e.target.value})),
+                                                className: 'w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500',
+                                                placeholder: '예: 10-15%'
+                                            })
+                                        ]),
+                                        React.createElement('div', { key: 'max-drawdown-field' }, [
+                                            React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '최대 손실 한도'),
+                                            React.createElement('input', {
+                                                type: 'text',
+                                                value: currentStrategy.maxDrawdown,
+                                                onChange: (e) => setCurrentStrategy(prev => ({...prev, maxDrawdown: e.target.value})),
+                                                className: 'w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500',
+                                                placeholder: '예: -3%'
+                                            })
+                                        ])
+                                    ])
+                                ]),
+
+                                // 자금 관리 및 기술 지표
+                                React.createElement('div', { key: 'advanced-settings', className: 'space-y-4' }, [
+                                    React.createElement('h4', { className: 'text-lg font-semibold text-gray-700 border-b pb-2' }, '자금 관리 및 기술 지표'),
+                                    React.createElement('div', { key: 'money-management-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '자금 운영 방법'),
+                                        React.createElement('textarea', {
+                                            value: currentStrategy.moneyManagement,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, moneyManagement: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg h-20 resize-none focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '예: 총 자금의 5%씩 분할 매수, 포지션 사이즈 관리 방법'
+                                        })
+                                    ]),
+                                    React.createElement('div', { key: 'technical-indicators-field' }, [
+                                        React.createElement('label', { className: 'block text-sm font-medium mb-1' }, '사용 기술지표'),
+                                        React.createElement('textarea', {
+                                            value: currentStrategy.technicalIndicators,
+                                            onChange: (e) => setCurrentStrategy(prev => ({...prev, technicalIndicators: e.target.value})),
+                                            className: 'w-full px-3 py-2 border rounded-lg h-24 resize-none focus:ring-2 focus:ring-blue-500',
+                                            placeholder: '예: RSI(14), MACD(12,26,9), 볼린저밴드(20,2), 이동평균선(5,20,60)'
+                                        })
+                                    ])
                                 ])
                             ]),
                             React.createElement('div', { key: 'buttons', className: 'flex gap-3 mt-6' }, [
@@ -1741,7 +1852,19 @@
                                     onClick: () => {
                                         setShowStrategyForm(false);
                                         setEditingStrategy(null);
-                                        setCurrentStrategy({ name: '', description: '', rules: '', riskLevel: 'medium' });
+                                        setCurrentStrategy({ 
+                    name: '', 
+                    description: '', 
+                    buyCriteria: '',
+                    sellCriteria: '',
+                    moneyManagement: '',
+                    stopLoss: '',
+                    technicalIndicators: '',
+                    riskLevel: 'medium',
+                    timeframe: '',
+                    targetReturn: '',
+                    maxDrawdown: ''
+                });
                                     },
                                     className: 'flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50'
                                 }, '취소'),
