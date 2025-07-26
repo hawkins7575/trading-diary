@@ -38,9 +38,9 @@ export const Dashboard = ({ trades }) => {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* 상단 메트릭 카드들 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
         <MetricCard
           title="현재 잔고"
           value={formatCurrency(currentBalance)}
@@ -50,7 +50,7 @@ export const Dashboard = ({ trades }) => {
           title="총 수익"
           value={formatCurrency(totalProfit)}
           subtitle={totalProfit >= 0 ? '수익' : '손실'}
-          className={totalProfit >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}
+          className={totalProfit >= 0 ? 'border-l-2 lg:border-l-4 border-green-500' : 'border-l-2 lg:border-l-4 border-red-500'}
         />
         <MetricCard
           title="승률"
@@ -65,7 +65,7 @@ export const Dashboard = ({ trades }) => {
       </div>
 
       {/* 차트 및 통계 섹션 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* 수익 추이 차트 */}
         <div className="lg:col-span-2">
           <div className="metric-card p-4 lg:p-6">
