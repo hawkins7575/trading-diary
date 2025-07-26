@@ -48,6 +48,22 @@
             background: #2d4985;
             transform: translateY(-1px);
         }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--foreground);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #f0b85a;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -56,87 +72,45 @@
     <script>
         const { useState, useEffect } = React;
         
-        // 간단한 사용자 데이터베이스 시뮬레이션
-        class LocalUserDB {
-            constructor() {
-                this.users = JSON.parse(localStorage.getItem('trading_users') || '[]');
-            }
-            
-            async signUp(name, email, password) {
-                // 이메일 중복 체크
-                const existingUser = this.users.find(u => u.email === email);
-                if (existingUser) {
-                    return { success: false, error: '이미 존재하는 이메일입니다.' };
-                }
-                
-                // 새 사용자 생성
-                const newUser = {
-                    id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    name,
-                    email,
-                    passwordHash: btoa(password), // 간단한 인코딩
-                    createdAt: new Date().toISOString(),
-                    trades: [],
-                    journals: [],
-                    strategies: [],
-                    goals: []
-                };
-                
-                this.users.push(newUser);
-                this.saveUsers();
-                
-                return { success: true, user: newUser };
-            }
-            
-            async signIn(email, password) {
-                const user = this.users.find(u => 
-                    u.email === email && u.passwordHash === btoa(password)
-                );
-                
-                if (user) {
-                    return { success: true, user };
-                } else {
-                    return { success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' };
-                }
-            }
-            
-            saveUsers() {
-                localStorage.setItem('trading_users', JSON.stringify(this.users));
-            }
-            
-            getUserById(userId) {
-                return this.users.find(u => u.id === userId);
-            }
-        }
-        
         function TradingApp() {
-            // 상태 관리
-            const [activeTab, setActiveTab] = useState('dashboard');
-            const [showLoginModal, setShowLoginModal] = useState(false);
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            // 기본 상태
             const [user, setUser] = useState(null);
+            const [isOnlineMode, setIsOnlineMode] = useState(false);
+            const [showLoginModal, setShowLoginModal] = useState(false);
             const [isSignUp, setIsSignUp] = useState(false);
             const [error, setError] = useState('');
-            const [userDB] = useState(new LocalUserDB());
+            const [activeTab, setActiveTab] = useState('dashboard');
             
-            // 로그인 상태 복원
+            // 저장된 사용자 정보 복원 (온라인 모드 확인)
             useEffect(() => {
-                const savedSession = localStorage.getItem('trading_session');
-                if (savedSession) {
+                const savedUser = localStorage.getItem('tradingUser');
+                if (savedUser) {
                     try {
-                        const session = JSON.parse(savedSession);
-                        const user = userDB.getUserById(session.userId);
-                        if (user) {
-                            setUser(user);
-                            setIsLoggedIn(true);
-                        }
+                        const userData = JSON.parse(savedUser);
+                        setUser(userData);
+                        setIsOnlineMode(userData.isOnline || false);
                     } catch (e) {
-                        localStorage.removeItem('trading_session');
+                        localStorage.removeItem('tradingUser');
                     }
                 }
-            }, [userDB]);
+            }, []);
             
-            // 회원가입 핸들러
+            // 로컬 사용자로 시작
+            const startAsLocalUser = () => {
+                const localUser = {
+                    name: '로컬 사용자',
+                    email: 'local@device',
+                    avatar: '💻',
+                    isOnline: false,
+                    startTime: new Date().toISOString()
+                };
+                
+                setUser(localUser);
+                setIsOnlineMode(false);
+                localStorage.setItem('tradingUser', JSON.stringify(localUser));
+            };
+            
+            // 온라인 회원가입
             const handleSignUp = async (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
@@ -154,29 +128,23 @@
                     return;
                 }
                 
-                try {
-                    const result = await userDB.signUp(name, email, password);
-                    
-                    if (result.success) {
-                        setUser(result.user);
-                        setIsLoggedIn(true);
-                        setShowLoginModal(false);
-                        setError('');
-                        
-                        // 세션 저장
-                        localStorage.setItem('trading_session', JSON.stringify({
-                            userId: result.user.id,
-                            loginTime: new Date().toISOString()
-                        }));
-                    } else {
-                        setError(result.error);
-                    }
-                } catch (error) {
-                    setError('회원가입 중 오류가 발생했습니다.');
-                }
+                // 온라인 사용자 생성 (실제로는 서버에 저장)
+                const onlineUser = {
+                    name: name,
+                    email: email,
+                    avatar: '🌐',
+                    isOnline: true,
+                    signUpTime: new Date().toISOString()
+                };
+                
+                setUser(onlineUser);
+                setIsOnlineMode(true);
+                setShowLoginModal(false);
+                setError('');
+                localStorage.setItem('tradingUser', JSON.stringify(onlineUser));
             };
             
-            // 로그인 핸들러
+            // 온라인 로그인
             const handleLogin = async (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
@@ -188,74 +156,26 @@
                     return;
                 }
                 
-                try {
-                    const result = await userDB.signIn(email, password);
-                    
-                    if (result.success) {
-                        setUser(result.user);
-                        setIsLoggedIn(true);
-                        setShowLoginModal(false);
-                        setError('');
-                        
-                        // 세션 저장
-                        localStorage.setItem('trading_session', JSON.stringify({
-                            userId: result.user.id,
-                            loginTime: new Date().toISOString()
-                        }));
-                    } else {
-                        setError(result.error);
-                    }
-                } catch (error) {
-                    setError('로그인 중 오류가 발생했습니다.');
-                }
-            };
-            
-            // 로그아웃 핸들러
-            const handleLogout = () => {
-                setIsLoggedIn(false);
-                setUser(null);
-                setShowLoginModal(false);
-                localStorage.removeItem('trading_session');
-            };
-            
-            // 데이터 초기화 핸들러
-            const handleReset = () => {
-                const confirmed = window.confirm(
-                    '⚠️ 모든 데이터를 삭제하시겠습니까?\n\n' +
-                    '다음 데이터가 완전히 삭제됩니다:\n' +
-                    '• 모든 사용자 계정\n' +
-                    '• 거래 내역\n' +
-                    '• 매매일지\n' +
-                    '• 전략 및 목표\n\n' +
-                    '이 작업은 되돌릴 수 없습니다.'
-                );
+                // 간단한 로그인 시뮬레이션
+                const onlineUser = {
+                    name: email.split('@')[0],
+                    email: email,
+                    avatar: '🌐',
+                    isOnline: true,
+                    loginTime: new Date().toISOString()
+                };
                 
-                if (confirmed) {
-                    const doubleConfirmed = window.confirm(
-                        '🚨 정말로 모든 데이터를 삭제하시겠습니까?\n\n' +
-                        '"예"를 클릭하면 즉시 삭제되며 복구할 수 없습니다.'
-                    );
-                    
-                    if (doubleConfirmed) {
-                        // 모든 로컬 저장소 데이터 삭제
-                        localStorage.removeItem('trading_users');
-                        localStorage.removeItem('trading_session');
-                        localStorage.removeItem('tradingUser');
-                        localStorage.removeItem('convex_users');
-                        
-                        // 상태 초기화
-                        setIsLoggedIn(false);
-                        setUser(null);
-                        setShowLoginModal(false);
-                        setError('');
-                        
-                        // 성공 알림
-                        alert('✅ 모든 데이터가 성공적으로 삭제되었습니다.\n새로 시작할 수 있습니다!');
-                        
-                        // 페이지 새로고침하여 완전히 초기화
-                        window.location.reload();
-                    }
-                }
+                setUser(onlineUser);
+                setIsOnlineMode(true);
+                setShowLoginModal(false);
+                setError('');
+                localStorage.setItem('tradingUser', JSON.stringify(onlineUser));
+            };
+            
+            // 로그아웃 (로컬 모드로 전환)
+            const handleLogout = () => {
+                startAsLocalUser();
+                setShowLoginModal(false);
             };
             
             // 로그인 모달 렌더링
@@ -263,15 +183,18 @@
                 if (!showLoginModal) return null;
                 
                 return React.createElement('div', {
-                    key: 'modal',
-                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+                    key: 'login-modal',
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50',
+                    onClick: (e) => {
+                        if (e.target === e.currentTarget) setShowLoginModal(false);
+                    }
                 }, [
                     React.createElement('div', {
                         key: 'modal-content',
-                        className: 'bg-white rounded-2xl p-8 w-full max-w-md relative'
+                        className: 'bg-white rounded-2xl p-8 w-full max-w-md mx-4 relative'
                     }, [
                         React.createElement('button', {
-                            key: 'close',
+                            key: 'close-btn',
                             onClick: () => setShowLoginModal(false),
                             className: 'absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl'
                         }, '×'),
@@ -282,12 +205,13 @@
                         }, [
                             React.createElement('h2', {
                                 key: 'title',
-                                className: 'text-2xl font-bold mb-2'
-                            }, isSignUp ? '회원가입' : '로그인'),
+                                className: 'text-2xl font-bold mb-2',
+                                style: { color: 'var(--foreground)' }
+                            }, isSignUp ? '온라인 회원가입' : '온라인 로그인'),
                             React.createElement('p', {
                                 key: 'subtitle',
                                 className: 'text-gray-600'
-                            }, isSignUp ? '새 계정을 만들어보세요' : '계정에 로그인하세요')
+                            }, isSignUp ? '데이터를 온라인에 저장하세요' : '온라인 계정으로 로그인')
                         ]),
                         
                         error && React.createElement('div', {
@@ -300,56 +224,51 @@
                             onSubmit: isSignUp ? handleSignUp : handleLogin,
                             className: 'space-y-4'
                         }, [
-                            isSignUp && React.createElement('div', {
-                                key: 'name-field',
-                                className: 'space-y-2'
-                            }, [
+                            // 회원가입 시에만 이름 필드 표시
+                            isSignUp && React.createElement('div', { key: 'name-field', className: 'space-y-2' }, [
                                 React.createElement('label', {
                                     key: 'label',
-                                    className: 'block text-sm font-medium text-gray-700'
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
                                 }, '이름'),
                                 React.createElement('input', {
                                     key: 'input',
                                     type: 'text',
                                     name: 'name',
                                     required: true,
-                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
                                     placeholder: '이름을 입력하세요'
                                 })
                             ]),
                             
-                            React.createElement('div', {
-                                key: 'email-field',
-                                className: 'space-y-2'
-                            }, [
+                            React.createElement('div', { key: 'email-field', className: 'space-y-2' }, [
                                 React.createElement('label', {
                                     key: 'label',
-                                    className: 'block text-sm font-medium text-gray-700'
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
                                 }, '이메일'),
                                 React.createElement('input', {
                                     key: 'input',
                                     type: 'email',
                                     name: 'email',
                                     required: true,
-                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
                                     placeholder: 'your@email.com'
                                 })
                             ]),
                             
-                            React.createElement('div', {
-                                key: 'password-field',
-                                className: 'space-y-2'
-                            }, [
+                            React.createElement('div', { key: 'password-field', className: 'space-y-2' }, [
                                 React.createElement('label', {
                                     key: 'label',
-                                    className: 'block text-sm font-medium text-gray-700'
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
                                 }, '비밀번호'),
                                 React.createElement('input', {
                                     key: 'input',
                                     type: 'password',
                                     name: 'password',
                                     required: true,
-                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
                                     placeholder: '6자 이상 입력하세요'
                                 })
                             ]),
@@ -358,11 +277,11 @@
                                 key: 'submit',
                                 type: 'submit',
                                 className: 'w-full btn-primary'
-                            }, isSignUp ? '회원가입' : '로그인'),
+                            }, isSignUp ? '회원가입하고 온라인 저장하기' : '로그인'),
                             
                             React.createElement('div', {
                                 key: 'toggle',
-                                className: 'text-center pt-4'
+                                className: 'text-center'
                             }, [
                                 React.createElement('button', {
                                     key: 'toggle-btn',
@@ -371,7 +290,8 @@
                                         setIsSignUp(!isSignUp);
                                         setError('');
                                     },
-                                    className: 'text-blue-600 hover:text-blue-700 text-sm'
+                                    className: 'text-sm font-medium hover:underline',
+                                    style: { color: 'var(--primary)' }
                                 }, isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입')
                             ])
                         ])
@@ -381,239 +301,188 @@
             
             // 대시보드 렌더링
             const renderDashboard = () => {
-                return React.createElement('div', {
-                    className: 'space-y-6'
-                }, [
-                    React.createElement('div', {
-                        key: 'header',
-                        className: 'text-center'
-                    }, [
-                        React.createElement('h1', {
-                            key: 'title',
+                return React.createElement('div', { className: 'space-y-6' }, [
+                    React.createElement('div', { key: 'header' }, [
+                        React.createElement('h1', { 
                             className: 'text-3xl font-bold mb-2',
                             style: { color: 'var(--foreground)' }
-                        }, '대시보드'),
-                        React.createElement('p', {
-                            key: 'subtitle',
-                            className: 'text-gray-600 mb-4'
-                        }, '투자 현황을 한눈에 확인하세요'),
+                        }, 'Trading Diary'),
+                        React.createElement('p', { 
+                            className: 'text-gray-600'
+                        }, '코인 매매 일지에 오신 것을 환영합니다!'),
+                        
+                        // 저장 모드 표시
                         React.createElement('div', {
-                            key: 'status',
-                            className: 'inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800'
+                            key: 'storage-status',
+                            className: `mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                                isOnlineMode 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                            }`
                         }, [
                             React.createElement('span', {
                                 key: 'indicator',
-                                className: 'w-2 h-2 rounded-full mr-2 bg-green-500'
+                                className: `w-2 h-2 rounded-full mr-2 ${
+                                    isOnlineMode 
+                                        ? 'bg-green-500' 
+                                        : 'bg-blue-500'
+                                }`
                             }),
                             React.createElement('span', {
                                 key: 'text'
-                            }, '🚀 GitHub Pages 배포 완료!')
+                            }, isOnlineMode 
+                                ? '🌐 온라인 저장 모드 - 모든 기기에서 동기화' 
+                                : '💻 로컬 저장 모드 - 이 기기에서만 사용'
+                            )
                         ])
                     ]),
                     
+                    // 환영 카드
                     React.createElement('div', {
                         key: 'welcome-card',
-                        className: 'bg-white rounded-lg shadow p-6 max-w-2xl mx-auto'
+                        className: 'bg-white rounded-lg shadow p-6'
                     }, [
                         React.createElement('div', {
-                            key: 'content',
+                            key: 'welcome',
                             className: 'text-center'
                         }, [
                             React.createElement('div', {
                                 key: 'icon',
-                                className: 'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6'
+                                className: `mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 ${
+                                    isOnlineMode 
+                                        ? 'bg-green-100' 
+                                        : 'bg-blue-100'
+                                }`
                             }, [
                                 React.createElement('span', {
                                     key: 'emoji',
                                     className: 'text-3xl'
-                                }, '🎉')
+                                }, user?.avatar || '📊')
                             ]),
                             React.createElement('h2', {
-                                key: 'welcome-title',
-                                className: 'text-2xl font-bold text-gray-900 mb-4'
-                            }, `환영합니다, ${user?.name}님!`),
+                                key: 'title',
+                                className: 'text-xl font-medium text-gray-900 mb-2'
+                            }, `안녕하세요, ${user?.name || '사용자'}님!`),
                             React.createElement('p', {
-                                key: 'welcome-desc',
+                                key: 'desc',
                                 className: 'text-gray-600 mb-6'
-                            }, 'Trading Diary에 성공적으로 로그인하셨습니다.'),
-                            React.createElement('div', {
-                                key: 'features',
-                                className: 'bg-blue-50 border border-blue-200 rounded-lg p-6 text-left'
-                            }, [
-                                React.createElement('h3', {
-                                    key: 'features-title',
-                                    className: 'font-bold text-blue-800 mb-4 text-center'
-                                }, '🎯 완성된 기능들'),
-                                React.createElement('div', {
-                                    key: 'features-grid',
-                                    className: 'grid grid-cols-1 md:grid-cols-2 gap-3'
-                                }, [
-                                    React.createElement('div', {
-                                        key: 'feat1',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check1' }, '✅ '),
-                                        React.createElement('span', { key: 'text1' }, '회원가입/로그인 시스템')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat2',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check2' }, '✅ '),
-                                        React.createElement('span', { key: 'text2' }, '사용자별 독립 데이터')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat3',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check3' }, '✅ '),
-                                        React.createElement('span', { key: 'text3' }, '완전한 멀티유저 지원')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat4',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check4' }, '✅ '),
-                                        React.createElement('span', { key: 'text4' }, 'GitHub Pages 배포')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat5',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check5' }, '✅ '),
-                                        React.createElement('span', { key: 'text5' }, '반응형 모바일 디자인')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat6',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check6' }, '✅ '),
-                                        React.createElement('span', { key: 'text6' }, '안전한 데이터 저장')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat7',
-                                        className: 'flex items-center text-orange-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check7' }, '🔄 '),
-                                        React.createElement('span', { key: 'text7' }, '데이터 초기화 기능')
-                                    ]),
-                                    React.createElement('div', {
-                                        key: 'feat8',
-                                        className: 'flex items-center text-blue-700'
-                                    }, [
-                                        React.createElement('span', { key: 'check8' }, '✅ '),
-                                        React.createElement('span', { key: 'text8' }, '완전한 관리 도구')
-                                    ])
-                                ])
-                            ]),
-                            React.createElement('div', {
-                                key: 'usage-guide',
-                                className: 'mt-6 bg-orange-50 border border-orange-200 rounded-lg p-4'
-                            }, [
-                                React.createElement('h4', {
-                                    key: 'guide-title',
-                                    className: 'font-medium text-orange-800 mb-2 text-center'
-                                }, '🔄 다시시작 기능 사용법'),
-                                React.createElement('p', {
-                                    key: 'guide-desc',
-                                    className: 'text-orange-700 text-sm text-center'
-                                }, '우측 상단의 "🔄 다시시작" 버튼을 클릭하면 모든 사용자 데이터를 삭제하고 처음부터 새로 시작할 수 있습니다. (복구 불가)')
-                            ]),
-                            React.createElement('div', {
-                                key: 'stats',
-                                className: 'mt-6 grid grid-cols-3 gap-4 text-center'
-                            }, [
-                                React.createElement('div', {
-                                    key: 'stat1',
-                                    className: 'bg-gray-50 rounded-lg p-3'
-                                }, [
-                                    React.createElement('div', {
-                                        key: 'number1',
-                                        className: 'text-2xl font-bold text-gray-900'
-                                    }, '100%'),
-                                    React.createElement('div', {
-                                        key: 'label1',
-                                        className: 'text-sm text-gray-600'
-                                    }, '시스템 완성도')
-                                ]),
-                                React.createElement('div', {
-                                    key: 'stat2',
-                                    className: 'bg-gray-50 rounded-lg p-3'
-                                }, [
-                                    React.createElement('div', {
-                                        key: 'number2',
-                                        className: 'text-2xl font-bold text-gray-900'
-                                    }, '24/7'),
-                                    React.createElement('div', {
-                                        key: 'label2',
-                                        className: 'text-sm text-gray-600'
-                                    }, '온라인 서비스')
-                                ]),
-                                React.createElement('div', {
-                                    key: 'stat3',
-                                    className: 'bg-gray-50 rounded-lg p-3'
-                                }, [
-                                    React.createElement('div', {
-                                        key: 'number3',
-                                        className: 'text-2xl font-bold text-gray-900'
-                                    }, '🌍'),
-                                    React.createElement('div', {
-                                        key: 'label3',
-                                        className: 'text-sm text-gray-600'
-                                    }, '전 세계 접속')
-                                ])
-                            ])
+                            }, isOnlineMode 
+                                ? '온라인 계정으로 모든 데이터가 안전하게 저장됩니다.' 
+                                : '지금 바로 매매일지를 작성해보세요! 데이터는 이 기기에 저장됩니다.'
+                            )
                         ])
-                    ])
-                ]);
-            };
-            
-            // 로그인하지 않은 상태의 화면
-            if (!isLoggedIn) {
-                return React.createElement('div', {
-                    className: 'min-h-screen bg-gray-50 flex items-center justify-center p-4'
-                }, [
+                    ]),
+                    
+                    // 기능 카드들
                     React.createElement('div', {
-                        key: 'login-screen',
-                        className: 'max-w-md w-full space-y-8'
+                        key: 'feature-cards',
+                        className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
                     }, [
                         React.createElement('div', {
-                            key: 'header',
-                            className: 'text-center'
+                            key: 'trades-card',
+                            className: 'bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer'
                         }, [
-                            React.createElement('h1', {
-                                key: 'title',
-                                className: 'text-4xl font-bold text-gray-900 mb-4'
-                            }, '📊 Trading Diary'),
-                            React.createElement('p', {
-                                key: 'subtitle',
-                                className: 'text-gray-600 mb-8'
-                            }, '코인 매매 일지 - 멀티유저 버전'),
                             React.createElement('div', {
-                                key: 'status',
-                                className: 'mb-8 p-4 bg-green-50 border border-green-200 rounded-lg'
+                                key: 'trades-content',
+                                className: 'text-center'
                             }, [
                                 React.createElement('div', {
-                                    key: 'status-content',
-                                    className: 'text-center'
+                                    key: 'trades-icon',
+                                    className: 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4'
                                 }, [
-                                    React.createElement('div', {
-                                        key: 'status-icon',
-                                        className: 'text-2xl mb-2'
-                                    }, '🚀'),
-                                    React.createElement('div', {
-                                        key: 'status-text',
-                                        className: 'text-green-800 font-medium'
-                                    }, 'GitHub Pages 배포 완료!'),
-                                    React.createElement('div', {
-                                        key: 'status-desc',
-                                        className: 'text-green-600 text-sm mt-1'
-                                    }, '전 세계 어디서나 접속 가능합니다')
-                                ])
-                            ]),
+                                    React.createElement('span', {
+                                        key: 'trades-emoji',
+                                        className: 'text-2xl'
+                                    }, '📈')
+                                ]),
+                                React.createElement('h3', {
+                                    key: 'trades-title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, '거래 기록'),
+                                React.createElement('p', {
+                                    key: 'trades-desc',
+                                    className: 'text-gray-600 text-sm'
+                                }, '매수/매도 내역을 기록하고 관리하세요')
+                            ])
+                        ]),
+                        
+                        React.createElement('div', {
+                            key: 'journal-card',
+                            className: 'bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer'
+                        }, [
                             React.createElement('div', {
-                                key: 'buttons',
-                                className: 'space-y-4'
+                                key: 'journal-content',
+                                className: 'text-center'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'journal-icon',
+                                    className: 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'journal-emoji',
+                                        className: 'text-2xl'
+                                    }, '📝')
+                                ]),
+                                React.createElement('h3', {
+                                    key: 'journal-title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, '매매 일지'),
+                                React.createElement('p', {
+                                    key: 'journal-desc',
+                                    className: 'text-gray-600 text-sm'
+                                }, '거래 전략과 결과를 분석하세요')
+                            ])
+                        ]),
+                        
+                        React.createElement('div', {
+                            key: 'stats-card',
+                            className: 'bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer'
+                        }, [
+                            React.createElement('div', {
+                                key: 'stats-content',
+                                className: 'text-center'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'stats-icon',
+                                    className: 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4'
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'stats-emoji',
+                                        className: 'text-2xl'
+                                    }, '📊')
+                                ]),
+                                React.createElement('h3', {
+                                    key: 'stats-title',
+                                    className: 'text-lg font-medium text-gray-900 mb-2'
+                                }, '통계 분석'),
+                                React.createElement('p', {
+                                    key: 'stats-desc',
+                                    className: 'text-gray-600 text-sm'
+                                }, '수익률과 성과를 시각화하세요')
+                            ])
+                        ])
+                    ]),
+                    
+                    // 온라인 저장 안내 (로컬 모드일 때만)
+                    !isOnlineMode && React.createElement('div', {
+                        key: 'online-promotion',
+                        className: 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6'
+                    }, [
+                        React.createElement('div', {
+                            key: 'promotion-content',
+                            className: 'text-center'
+                        }, [
+                            React.createElement('h3', {
+                                key: 'promotion-title',
+                                className: 'text-lg font-medium text-blue-900 mb-2'
+                            }, '🌐 온라인 저장으로 업그레이드하세요!'),
+                            React.createElement('p', {
+                                key: 'promotion-desc',
+                                className: 'text-blue-700 mb-4'
+                            }, '회원가입하면 모든 기기에서 데이터를 동기화하고 안전하게 백업할 수 있습니다.'),
+                            React.createElement('div', {
+                                key: 'promotion-buttons',
+                                className: 'space-x-4'
                             }, [
                                 React.createElement('button', {
                                     key: 'signup-btn',
@@ -621,27 +490,34 @@
                                         setIsSignUp(true);
                                         setShowLoginModal(true);
                                     },
-                                    className: 'w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg'
-                                }, '🎯 회원가입하기'),
+                                    className: 'btn-primary'
+                                }, '회원가입하기'),
                                 React.createElement('button', {
                                     key: 'login-btn',
                                     onClick: () => {
                                         setIsSignUp(false);
                                         setShowLoginModal(true);
                                     },
-                                    className: 'w-full border-2 border-gray-300 text-gray-700 py-4 px-6 rounded-lg hover:bg-gray-50 transition-colors font-medium text-lg'
-                                }, '🔑 로그인하기')
+                                    className: 'btn-secondary'
+                                }, '로그인하기')
                             ])
                         ])
-                    ]),
-                    renderLoginModal()
+                    ])
                 ]);
-            }
+            };
             
-            // 로그인된 상태의 메인 화면
+            // 처음 접속 시 자동으로 로컬 사용자로 시작
+            useEffect(() => {
+                if (!user) {
+                    startAsLocalUser();
+                }
+            }, [user]);
+            
+            // 메인 UI 렌더링
             return React.createElement('div', {
                 className: 'min-h-screen bg-gray-50'
             }, [
+                // 헤더
                 React.createElement('header', {
                     key: 'header',
                     className: 'bg-white shadow-sm border-b'
@@ -654,46 +530,51 @@
                             key: 'header-flex',
                             className: 'flex justify-between items-center h-16'
                         }, [
-                            React.createElement('h1', {
-                                key: 'logo',
-                                className: 'text-xl font-bold text-gray-900'
-                            }, '📊 Trading Diary'),
+                            React.createElement('div', {
+                                key: 'logo-section',
+                                className: 'flex items-center space-x-3'
+                            }, [
+                                React.createElement('h1', {
+                                    key: 'logo',
+                                    className: 'text-xl font-semibold text-gray-900'
+                                }, 'Trading Diary'),
+                                React.createElement('span', {
+                                    key: 'mode-badge',
+                                    className: `px-2 py-1 text-xs rounded-full ${
+                                        isOnlineMode 
+                                            ? 'bg-green-100 text-green-700' 
+                                            : 'bg-blue-100 text-blue-700'
+                                    }`
+                                }, isOnlineMode ? '온라인' : '로컬')
+                            ]),
                             React.createElement('div', {
                                 key: 'user-menu',
-                                className: 'flex items-center space-x-2 sm:space-x-3'
+                                className: 'flex items-center space-x-4'
                             }, [
                                 React.createElement('span', {
                                     key: 'welcome',
-                                    className: 'text-sm text-gray-600 hidden md:block'
-                                }, `안녕하세요, ${user?.name}님`),
-                                React.createElement('button', {
-                                    key: 'reset',
-                                    onClick: handleReset,
-                                    className: 'bg-orange-100 text-orange-700 px-2 py-1 sm:px-3 rounded-lg hover:bg-orange-200 transition-colors text-xs sm:text-sm font-medium',
-                                    title: '모든 데이터를 삭제하고 새로 시작합니다'
-                                }, React.createElement('span', {
-                                    key: 'reset-text',
-                                    className: 'hidden sm:inline'
-                                }, '🔄 다시시작'), React.createElement('span', {
-                                    key: 'reset-icon',
-                                    className: 'sm:hidden'
-                                }, '🔄')),
-                                React.createElement('button', {
-                                    key: 'logout',
-                                    onClick: handleLogout,
-                                    className: 'bg-red-100 text-red-700 px-2 py-1 sm:px-3 rounded-lg hover:bg-red-200 transition-colors text-xs sm:text-sm'
-                                }, React.createElement('span', {
-                                    key: 'logout-text',
-                                    className: 'hidden sm:inline'
-                                }, '로그아웃'), React.createElement('span', {
-                                    key: 'logout-icon',
-                                    className: 'sm:hidden'
-                                }, '🚪'))
+                                    className: 'text-sm text-gray-600'
+                                }, `${user?.name || '사용자'}님`),
+                                isOnlineMode ? 
+                                    React.createElement('button', {
+                                        key: 'logout',
+                                        onClick: handleLogout,
+                                        className: 'text-sm text-red-600 hover:text-red-700'
+                                    }, '로컬 모드로 전환') :
+                                    React.createElement('button', {
+                                        key: 'online',
+                                        onClick: () => {
+                                            setIsSignUp(true);
+                                            setShowLoginModal(true);
+                                        },
+                                        className: 'text-sm text-blue-600 hover:text-blue-700'
+                                    }, '온라인 저장')
                             ])
                         ])
                     ])
                 ]),
                 
+                // 메인 컨텐츠
                 React.createElement('main', {
                     key: 'main',
                     className: 'max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'
@@ -710,23 +591,19 @@
             ]);
         }
         
-        // React 앱 마운트
-        try {
+        // 앱 시작
+        function startApp() {
+            console.log('Trading Diary App starting...');
             const container = document.getElementById('root');
             const root = ReactDOM.createRoot(container);
             root.render(React.createElement(TradingApp));
-            console.log('Trading Diary 앱이 성공적으로 로드되었습니다!');
-        } catch (error) {
-            console.error('앱 로드 오류:', error);
-            document.getElementById('root').innerHTML = `
-                <div style="display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-                    <div>
-                        <h1 style="color: #dc2626; margin-bottom: 20px;">오류가 발생했습니다</h1>
-                        <p style="color: #666; margin-bottom: 20px;">페이지를 새로고침해보세요.</p>
-                        <button onclick="location.reload()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">새로고침</button>
-                    </div>
-                </div>
-            `;
+        }
+        
+        // DOM 준비되면 바로 시작
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
         }
     </script>
 </body>
