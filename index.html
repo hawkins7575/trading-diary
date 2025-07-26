@@ -88,13 +88,27 @@
         let convexClient = null;
         
         window.addEventListener('load', function() {
+            console.log('Window loaded, checking Convex...');
+            console.log('window.Convex:', !!window.Convex);
+            
             if (window.Convex && window.Convex.ConvexHttpClient) {
-                const CONVEX_URL = "https://superb-walrus-453.convex.cloud";
-                convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
-                window.convex = convexClient;
-                console.log('Convex client initialized');
+                try {
+                    const CONVEX_URL = "https://superb-walrus-453.convex.cloud";
+                    convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
+                    window.convex = convexClient;
+                    console.log('Convex client initialized successfully with URL:', CONVEX_URL);
+                    
+                    // 연결 테스트
+                    window.convex.query("auth:getCurrentUser", { userId: "test" })
+                        .then(() => console.log('Convex connection test successful'))
+                        .catch((error) => console.log('Convex connection test failed:', error));
+                } catch (error) {
+                    console.error('Error initializing Convex client:', error);
+                    window.convex = null;
+                }
             } else {
-                console.warn('Convex not loaded, using localStorage only');
+                console.error('Convex library not loaded properly');
+                console.log('Available window.Convex methods:', window.Convex ? Object.keys(window.Convex) : 'None');
                 window.convex = null;
             }
         });
@@ -440,9 +454,12 @@
                 try {
                     // Convex 서버 인증만 사용
                     if (!window.convex) {
-                        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                        console.error('Convex client not available during login attempt');
+                        setError('서버에 연결할 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
                         return;
                     }
+                    
+                    console.log('Attempting login with Convex for:', email);
 
                     const result = await window.convex.mutation("auth:signIn", { 
                         email, 
@@ -506,9 +523,12 @@
                 try {
                     // Convex 서버 회원가입만 사용
                     if (!window.convex) {
-                        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                        console.error('Convex client not available during signup attempt');
+                        setError('서버에 연결할 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
                         return;
                     }
+                    
+                    console.log('Attempting signup with Convex for:', email);
 
                     const result = await window.convex.mutation("auth:signUp", { 
                         email, 
