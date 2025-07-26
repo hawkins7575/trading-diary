@@ -7,15 +7,11 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Convex 클라이언트 라이브러리 -->
-    <script type="module">
-        // Convex 클라이언트를 ES6 모듈로 로드
-        import { ConvexReactClient } from 'https://esm.sh/convex@1.25.4/browser';
-        window.ConvexReactClient = ConvexReactClient;
-        window.convexReady = true;
-        
-        // 앱 초기화 이벤트 발생
-        window.dispatchEvent(new CustomEvent('convexLoaded'));
+    <!-- 즉시 시작 모드 - Convex 없이 로컬 저장소로 바로 시작 -->
+    <script>
+        console.log('Starting in local storage mode immediately');
+        window.convexReady = false; // 즉시 로컬 모드로 설정
+        window.appReady = true;     // 앱 시작 준비 완료
     </script>
     <style>
         :root {
@@ -80,8 +76,8 @@
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--background);">
             <div style="text-align: center;">
                 <div class="loading"></div>
-                <p style="margin-top: 20px; color: var(--foreground);">Trading Diary 로딩 중...</p>
-                <p style="margin-top: 10px; color: #666; font-size: 14px;">Convex 데이터베이스 연결 중</p>
+                <p style="margin-top: 20px; color: var(--foreground);">Trading Diary 시작 중...</p>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">로컬 저장소 모드로 준비 중</p>
             </div>
         </div>
     </div>
@@ -104,47 +100,12 @@
             const [convexConnected, setConvexConnected] = useState(false);
             const [loading, setLoading] = useState(true);
             
-            // Convex 클라이언트 초기화
+            // 앱 즉시 시작 - 로컬 저장소 모드
             useEffect(() => {
-                const initConvex = () => {
-                    try {
-                        if (window.ConvexReactClient) {
-                            const client = new window.ConvexReactClient(CONVEX_URL);
-                            setConvex(client);
-                            setConvexConnected(true);
-                            setLoading(false);
-                            console.log('Real Convex client connected to:', CONVEX_URL);
-                        } else {
-                            // Convex 로드 실패 시 폴백
-                            console.log('Convex client not available, using fallback');
-                            setConvexConnected(false);
-                            setLoading(false);
-                        }
-                    } catch (error) {
-                        console.error('Convex initialization failed:', error);
-                        setConvexConnected(false);
-                        setLoading(false);
-                    }
-                };
-                
-                if (window.convexReady) {
-                    initConvex();
-                } else {
-                    window.addEventListener('convexLoaded', initConvex);
-                    
-                    // 5초 후 타임아웃
-                    setTimeout(() => {
-                        if (!convex) {
-                            console.log('Convex loading timeout, using fallback');
-                            setConvexConnected(false);
-                            setLoading(false);
-                        }
-                    }, 5000);
-                }
-                
-                return () => {
-                    window.removeEventListener('convexLoaded', initConvex);
-                };
+                console.log('App starting in local storage mode');
+                setConvexConnected(false); // 로컬 저장소 모드
+                setConvex(null);
+                setLoading(false); // 로딩 완료
             }, []);
             
             // 로컬 스토리지에서 사용자 정보 복원
@@ -672,10 +633,25 @@
             ]);
         }
         
-        // 앱 마운트
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(React.createElement(TradingApp));
+        // React 로드 확인 후 앱 마운트
+        function startApp() {
+            if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                console.log('Starting Trading Diary App...');
+                const container = document.getElementById('root');
+                const root = ReactDOM.createRoot(container);
+                root.render(React.createElement(TradingApp));
+            } else {
+                console.log('React not loaded yet, retrying...');
+                setTimeout(startApp, 100);
+            }
+        }
+        
+        // DOM 로드 완료 후 앱 시작
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
     </script>
 </body>
 </html>
