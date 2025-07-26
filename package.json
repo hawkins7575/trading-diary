@@ -1,19 +1,40 @@
 {
   "name": "trading-diary",
-  "version": "1.0.0",
-  "description": "A simple trading diary app with local-first approach and optional cloud sync",
-  "main": "index.html",
+  "version": "2.0.0",
+  "description": "A modern trading diary app with local-first approach and optional cloud sync",
+  "type": "module",
   "scripts": {
-    "serve": "python3 -m http.server 3000"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md}"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.52.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.8.0",
+    "@supabase/supabase-js": "^2.52.1",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "vite": "^4.4.5",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.27",
+    "tailwindcss": "^3.3.3"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hawkins7575/trading-diary.git"
   },
-  "keywords": ["trading", "diary", "local-first", "supabase", "finance"],
+  "keywords": ["trading", "diary", "local-first", "supabase", "finance", "react", "vite"],
   "author": "",
   "license": "ISC",
   "bugs": {

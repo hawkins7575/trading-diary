@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #f5f7fa;
+    --foreground: #1a2238;
+    --card: #e3eaf2;
+    --primary: #3a5ba0;
+    --secondary: #f7c873;
+    --accent: #6ea3c1;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-lg border-none font-medium cursor-pointer transition-colors hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-foreground px-6 py-3 rounded-lg border-none font-medium cursor-pointer transition-colors hover:bg-secondary/90;
+  }
+
+  .btn-outline {
+    @apply border border-primary text-primary px-6 py-3 rounded-lg bg-transparent font-medium cursor-pointer transition-colors hover:bg-primary hover:text-white;
+  }
+
+  .metric-card {
+    @apply bg-card rounded-lg shadow-sm transition-all duration-300 hover:shadow-md;
+  }
+
+  .sidebar-container {
+    @apply bg-card;
+  }
+
+  .compact-stat-item {
+    @apply flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0;
+  }
+
+  .stat-label-compact {
+    @apply text-sm text-gray-600 font-normal;
+  }
+
+  .stat-value-compact {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-textarea {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none;
+  }
+
+  .form-select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .error-text {
+    @apply text-red-600 text-sm mt-1;
+  }
+
+  .success-text {
+    @apply text-green-600 text-sm mt-1;
+  }
+}
