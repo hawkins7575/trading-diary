@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://trading-diary-five.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Allow specific bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: NaverBot
+Allow: /
+
+User-agent: DaumBot
+Allow: /
+
+# Disallow admin or sensitive areas (if any)
+# Currently no restricted areas
+
+# Cache directives
+# Cache: public, max-age=86400
