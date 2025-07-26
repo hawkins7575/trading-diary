@@ -91,8 +91,14 @@
             
             // 로그인 관련
             const [showLoginModal, setShowLoginModal] = useState(false);
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
-            const [user, setUser] = useState(null);
+            const [isLoggedIn, setIsLoggedIn] = useState(() => {
+                const saved = localStorage.getItem('trading-diary-auth');
+                return saved ? JSON.parse(saved).isLoggedIn : false;
+            });
+            const [user, setUser] = useState(() => {
+                const saved = localStorage.getItem('trading-diary-auth');
+                return saved ? JSON.parse(saved).user : null;
+            });
             const [isSignUp, setIsSignUp] = useState(false);
             const [error, setError] = useState('');
             
@@ -206,6 +212,7 @@
                     localStorage.removeItem('trading-diary-journals');
                     localStorage.removeItem('trading-diary-strategies');
                     localStorage.removeItem('trading-diary-goals');
+                    localStorage.removeItem('trading-diary-auth');
                     
                     // 상태를 기본값으로 리셋
                     setTrades([
@@ -219,6 +226,10 @@
                     setJournals([]);
                     setStrategies([]);
                     setGoals([]);
+                    
+                    // 로그인 상태 초기화
+                    setIsLoggedIn(false);
+                    setUser(null);
                     
                     // 대시보드로 이동
                     setActiveTab('dashboard');
@@ -335,22 +346,72 @@
                 }
                 
                 if (email && password.length >= 6) {
-                    setUser({
+                    const userData = {
                         name: email.split('@')[0],
                         email: email,
                         avatar: '👤'
-                    });
+                    };
+                    setUser(userData);
                     setIsLoggedIn(true);
                     setShowLoginModal(false);
                     setError('');
+                    
+                    // localStorage에 로그인 상태 저장
+                    localStorage.setItem('trading-diary-auth', JSON.stringify({
+                        isLoggedIn: true,
+                        user: userData
+                    }));
                 } else {
                     setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
                 }
             };
             
+            const handleSignup = (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const email = formData.get('email');
+                const password = formData.get('password');
+                const confirmPassword = formData.get('confirmPassword');
+                
+                if (!email || !password || !confirmPassword) {
+                    setError('모든 필드를 입력해주세요.');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    setError('비밀번호가 일치하지 않습니다.');
+                    return;
+                }
+                
+                if (email && password.length >= 6) {
+                    const userData = {
+                        name: email.split('@')[0],
+                        email: email,
+                        avatar: '👤'
+                    };
+                    setUser(userData);
+                    setIsLoggedIn(true);
+                    setShowLoginModal(false);
+                    setError('');
+                    
+                    // localStorage에 로그인 상태 저장
+                    localStorage.setItem('trading-diary-auth', JSON.stringify({
+                        isLoggedIn: true,
+                        user: userData
+                    }));
+                    
+                    alert('회원가입이 완료되었습니다!');
+                } else {
+                    setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
+                }
+            };
+
             const handleLogout = () => {
                 setIsLoggedIn(false);
                 setUser(null);
+                
+                // localStorage에서 로그인 정보 제거
+                localStorage.removeItem('trading-diary-auth');
             };
             
             const handleSaveTrade = () => {
@@ -586,7 +647,7 @@
                         
                         React.createElement('form', {
                             key: 'form',
-                            onSubmit: handleLogin,
+                            onSubmit: isSignUp ? handleSignup : handleLogin,
                             className: 'space-y-4'
                         }, [
                             React.createElement('div', { key: 'email-field', className: 'space-y-2' }, [
@@ -617,6 +678,21 @@
                                     required: true,
                                     className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
                                     placeholder: '6자 이상 입력하세요'
+                                })
+                            ]),
+                            isSignUp && React.createElement('div', { key: 'confirm-password-field', className: 'space-y-2' }, [
+                                React.createElement('label', {
+                                    key: 'label',
+                                    className: 'block text-sm font-medium',
+                                    style: { color: 'var(--foreground)' }
+                                }, '비밀번호 확인'),
+                                React.createElement('input', {
+                                    key: 'input',
+                                    type: 'password',
+                                    name: 'confirmPassword',
+                                    required: true,
+                                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all',
+                                    placeholder: '비밀번호를 다시 입력하세요'
                                 })
                             ]),
                             error && React.createElement('div', {
