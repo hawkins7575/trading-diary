@@ -110,11 +110,21 @@
             const [showLoginModal, setShowLoginModal] = useState(false);
             const [isLoggedIn, setIsLoggedIn] = useState(() => {
                 const saved = localStorage.getItem('trading-diary-auth');
-                return saved ? JSON.parse(saved).isLoggedIn : false;
+                if (saved) {
+                    const authData = JSON.parse(saved);
+                    // Convex 인증만 허용
+                    return authData.authType === 'convex' ? authData.isLoggedIn : false;
+                }
+                return false;
             });
             const [user, setUser] = useState(() => {
                 const saved = localStorage.getItem('trading-diary-auth');
-                return saved ? JSON.parse(saved).user : null;
+                if (saved) {
+                    const authData = JSON.parse(saved);
+                    // Convex 인증만 허용
+                    return authData.authType === 'convex' ? authData.user : null;
+                }
+                return null;
             });
             const [isSignUp, setIsSignUp] = useState(false);
             const [error, setError] = useState('');
@@ -428,61 +438,42 @@
                 }
 
                 try {
-                    let userData = null;
+                    // Convex 서버 인증만 사용
+                    if (!window.convex) {
+                        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                        return;
+                    }
+
+                    const result = await window.convex.mutation("auth:signIn", { 
+                        email, 
+                        password 
+                    });
                     
-                    // Convex가 있으면 서버 인증 시도
-                    if (window.convex) {
-                        try {
-                            const result = await window.convex.mutation("auth:signIn", { 
-                                email, 
-                                password 
-                            });
-                            
-                            if (result.success) {
-                                userData = {
-                                    id: result.user.id,
-                                    name: result.user.name,
-                                    email: result.user.email,
-                                    avatar: '👤'
-                                };
-                                
-                                // Convex에서 사용자 데이터 로드
-                                await loadUserDataFromConvex(result.user.id);
-                            } else {
-                                setError(result.error || '로그인에 실패했습니다.');
-                                return;
-                            }
-                        } catch (convexError) {
-                            console.log('Convex login failed, using local auth:', convexError);
-                            // Convex 실패 시 로컬 인증으로 fallback
-                            userData = {
-                                name: email.split('@')[0],
-                                email: email,
-                                avatar: '👤'
-                            };
-                            loadUserData(email);
-                        }
-                    } else {
-                        // Convex 없으면 로컬 인증
-                        userData = {
-                            name: email.split('@')[0],
-                            email: email,
+                    if (result.success) {
+                        const userData = {
+                            id: result.user.id,
+                            name: result.user.name,
+                            email: result.user.email,
                             avatar: '👤'
                         };
-                        loadUserData(email);
-                    }
-                    
-                    if (userData) {
+                        
+                        // Convex에서 사용자 데이터 로드
+                        await loadUserDataFromConvex(result.user.id);
+                        
                         setUser(userData);
                         setIsLoggedIn(true);
                         setShowLoginModal(false);
                         setError('');
                         
-                        // localStorage에 로그인 상태 저장
+                        // localStorage에 로그인 상태 저장 (Convex 사용자만)
                         localStorage.setItem('trading-diary-auth', JSON.stringify({
                             isLoggedIn: true,
-                            user: userData
+                            user: userData,
+                            authType: 'convex'
                         }));
+                    } else {
+                        setError('이메일 또는 비밀번호가 잘못되었습니다.');
+                        return;
                     }
                 } catch (error) {
                     console.error('Login error:', error);
@@ -513,85 +504,48 @@
                 }
 
                 try {
-                    let userData = null;
+                    // Convex 서버 회원가입만 사용
+                    if (!window.convex) {
+                        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                        return;
+                    }
+
+                    const result = await window.convex.mutation("auth:signUp", { 
+                        email, 
+                        password,
+                        name: email.split('@')[0]
+                    });
                     
-                    // Convex가 있으면 서버 회원가입 시도
-                    if (window.convex) {
-                        try {
-                            const result = await window.convex.mutation("auth:signUp", { 
-                                email, 
-                                password,
-                                name: email.split('@')[0]
-                            });
-                            
-                            if (result.success) {
-                                userData = {
-                                    id: result.userId,
-                                    name: email.split('@')[0],
-                                    email: email,
-                                    avatar: '👤'
-                                };
-                                
-                                // 새 사용자는 빈 데이터로 시작
-                                setTrades([]);
-                                setJournals([]);
-                                setStrategies([]);
-                                setGoals([]);
-                            } else {
-                                setError(result.error || '회원가입에 실패했습니다.');
-                                return;
-                            }
-                        } catch (convexError) {
-                            console.log('Convex signup failed, using local signup:', convexError);
-                            // Convex 실패 시 로컬 가입으로 fallback
-                            userData = {
-                                name: email.split('@')[0],
-                                email: email,
-                                avatar: '👤'
-                            };
-                            
-                            // 새 사용자는 기본 샘플 데이터로 시작
-                            const sampleTrades = [
-                                { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
-                                { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' }
-                            ];
-                            setTrades(sampleTrades);
-                            setJournals([]);
-                            setStrategies([]);
-                            setGoals([]);
-                        }
-                    } else {
-                        // Convex 없으면 로컬 가입
-                        userData = {
+                    if (result.success) {
+                        const userData = {
+                            id: result.userId,
                             name: email.split('@')[0],
                             email: email,
                             avatar: '👤'
                         };
                         
-                        // 새 사용자는 기본 샘플 데이터로 시작
-                        const sampleTrades = [
-                            { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
-                            { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' }
-                        ];
-                        setTrades(sampleTrades);
+                        // 새 사용자는 빈 데이터로 시작
+                        setTrades([]);
                         setJournals([]);
                         setStrategies([]);
                         setGoals([]);
-                    }
-                    
-                    if (userData) {
+                        
                         setUser(userData);
                         setIsLoggedIn(true);
                         setShowLoginModal(false);
                         setError('');
                         
-                        // localStorage에 로그인 상태 저장
+                        // localStorage에 로그인 상태 저장 (Convex 사용자만)
                         localStorage.setItem('trading-diary-auth', JSON.stringify({
                             isLoggedIn: true,
-                            user: userData
+                            user: userData,
+                            authType: 'convex'
                         }));
                         
                         alert('회원가입이 완료되었습니다!');
+                    } else {
+                        setError(result.error || '회원가입에 실패했습니다.');
+                        return;
                     }
                 } catch (error) {
                     console.error('Signup error:', error);
