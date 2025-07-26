@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MetricCard } from './MetricCard'
 import { CompactStats } from './CompactStats'
 import { ProfitChart } from './ProfitChart'
+import { RecentTrades } from './RecentTrades'
 import { calculateWinRate, calculateTotalProfit, formatCurrency, formatPercentage, getTradesByPeriod } from '@/utils/calculations'
 import { CHART_PERIODS } from '@/constants'
 
@@ -97,46 +98,7 @@ export const Dashboard = ({ trades }) => {
       </div>
 
       {/* 최근 거래 내역 */}
-      <div className="metric-card p-6">
-        <h3 className="text-lg font-semibold mb-4">최근 거래</h3>
-        {trades.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            아직 거래 내역이 없습니다
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">날짜</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">입금</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">출금</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">손익</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">잔고</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">메모</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.slice(-5).reverse().map(trade => {
-                  const profit = parseFloat(trade.withdrawal || 0) - parseFloat(trade.entry || 0)
-                  return (
-                    <tr key={trade.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">{trade.date}</td>
-                      <td className="py-3 px-4">{formatCurrency(parseFloat(trade.entry) || 0)}</td>
-                      <td className="py-3 px-4">{formatCurrency(parseFloat(trade.withdrawal) || 0)}</td>
-                      <td className={`py-3 px-4 font-medium ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(profit)}
-                      </td>
-                      <td className="py-3 px-4 font-medium">{formatCurrency(parseFloat(trade.balance) || 0)}</td>
-                      <td className="py-3 px-4 text-gray-600 max-w-xs truncate">{trade.memo}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <RecentTrades trades={trades} />
     </div>
   )
 }
