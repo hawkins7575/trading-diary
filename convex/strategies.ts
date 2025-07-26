@@ -16,8 +16,15 @@ export const getUserStrategies = query({
       id: strategy._id,
       name: strategy.name,
       description: strategy.description,
-      rules: strategy.rules,
+      buyCriteria: strategy.buyCriteria,
+      sellCriteria: strategy.sellCriteria,
+      moneyManagement: strategy.moneyManagement,
+      stopLoss: strategy.stopLoss,
+      technicalIndicators: strategy.technicalIndicators,
       riskLevel: strategy.riskLevel,
+      timeframe: strategy.timeframe,
+      targetReturn: strategy.targetReturn,
+      maxDrawdown: strategy.maxDrawdown,
       createdAt: strategy.createdAt,
       updatedAt: strategy.updatedAt,
     }));
@@ -29,9 +36,16 @@ export const addStrategy = mutation({
   args: {
     userId: v.id("users"),
     name: v.string(),
-    description: v.string(),
-    rules: v.string(),
+    description: v.optional(v.string()),
+    buyCriteria: v.optional(v.string()),
+    sellCriteria: v.optional(v.string()),
+    moneyManagement: v.optional(v.string()),
+    stopLoss: v.optional(v.string()),
+    technicalIndicators: v.optional(v.string()),
     riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    timeframe: v.optional(v.string()),
+    targetReturn: v.optional(v.string()),
+    maxDrawdown: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // 사용자 존재 확인
@@ -41,16 +55,23 @@ export const addStrategy = mutation({
     }
 
     // 입력 검증
-    if (!args.name.trim() || !args.description.trim() || !args.rules.trim()) {
-      throw new ConvexError("모든 필드를 입력해주세요.");
+    if (!args.name.trim()) {
+      throw new ConvexError("전략명을 입력해주세요.");
     }
 
     const strategyId = await ctx.db.insert("strategies", {
       userId: args.userId,
       name: args.name.trim(),
-      description: args.description.trim(),
-      rules: args.rules.trim(),
+      description: args.description,
+      buyCriteria: args.buyCriteria,
+      sellCriteria: args.sellCriteria,
+      moneyManagement: args.moneyManagement,
+      stopLoss: args.stopLoss,
+      technicalIndicators: args.technicalIndicators,
       riskLevel: args.riskLevel,
+      timeframe: args.timeframe,
+      targetReturn: args.targetReturn,
+      maxDrawdown: args.maxDrawdown,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -65,9 +86,16 @@ export const updateStrategy = mutation({
     strategyId: v.id("strategies"),
     userId: v.id("users"),
     name: v.string(),
-    description: v.string(),
-    rules: v.string(),
+    description: v.optional(v.string()),
+    buyCriteria: v.optional(v.string()),
+    sellCriteria: v.optional(v.string()),
+    moneyManagement: v.optional(v.string()),
+    stopLoss: v.optional(v.string()),
+    technicalIndicators: v.optional(v.string()),
     riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    timeframe: v.optional(v.string()),
+    targetReturn: v.optional(v.string()),
+    maxDrawdown: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const strategy = await ctx.db.get(args.strategyId);
@@ -80,11 +108,22 @@ export const updateStrategy = mutation({
       throw new ConvexError("권한이 없습니다.");
     }
 
+    if (!args.name.trim()) {
+      throw new ConvexError("전략명을 입력해주세요.");
+    }
+
     await ctx.db.patch(args.strategyId, {
       name: args.name.trim(),
-      description: args.description.trim(),
-      rules: args.rules.trim(),
+      description: args.description,
+      buyCriteria: args.buyCriteria,
+      sellCriteria: args.sellCriteria,
+      moneyManagement: args.moneyManagement,
+      stopLoss: args.stopLoss,
+      technicalIndicators: args.technicalIndicators,
       riskLevel: args.riskLevel,
+      timeframe: args.timeframe,
+      targetReturn: args.targetReturn,
+      maxDrawdown: args.maxDrawdown,
       updatedAt: Date.now(),
     });
 

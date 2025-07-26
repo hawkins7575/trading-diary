@@ -16,6 +16,7 @@ export const getUserJournals = query({
       id: journal._id,
       date: journal.date,
       content: journal.content,
+      mood: journal.mood,
       createdAt: journal.createdAt,
       updatedAt: journal.updatedAt,
     }));
@@ -42,6 +43,7 @@ export const getJournalByDate = query({
       id: journal._id,
       date: journal.date,
       content: journal.content,
+      mood: journal.mood,
       createdAt: journal.createdAt,
       updatedAt: journal.updatedAt,
     };
@@ -54,8 +56,15 @@ export const saveJournal = mutation({
     userId: v.id("users"),
     date: v.string(),
     content: v.string(),
+    mood: v.optional(v.union(
+      v.literal("excellent"), 
+      v.literal("good"), 
+      v.literal("neutral"), 
+      v.literal("bad"), 
+      v.literal("terrible")
+    )),
   },
-  handler: async (ctx, { userId, date, content }) => {
+  handler: async (ctx, { userId, date, content, mood }) => {
     // 사용자 존재 확인
     const user = await ctx.db.get(userId);
     if (!user) {
@@ -77,6 +86,7 @@ export const saveJournal = mutation({
       // 기존 일지 수정
       await ctx.db.patch(existingJournal._id, {
         content: content.trim(),
+        mood: mood,
         updatedAt: Date.now(),
       });
 
@@ -87,6 +97,7 @@ export const saveJournal = mutation({
         userId,
         date,
         content: content.trim(),
+        mood: mood,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

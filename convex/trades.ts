@@ -26,6 +26,62 @@ export const getUserTrades = query({
   },
 });
 
+// 거래 추가 (alias)
+export const createTrade = mutation({
+  args: {
+    userId: v.id("users"),
+    date: v.string(),
+    entry: v.number(),
+    withdrawal: v.number(),
+    balance: v.number(),
+    profit: v.number(),
+    memo: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // 사용자 존재 확인
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new ConvexError("사용자를 찾을 수 없습니다.");
+    }
+
+    // 입력 검증
+    if (!args.date) {
+      throw new ConvexError("날짜를 입력해주세요.");
+    }
+
+    if (args.entry < 0 || args.withdrawal < 0) {
+      throw new ConvexError("입금액과 출금액은 0 이상이어야 합니다.");
+    }
+
+    const tradeId = await ctx.db.insert("trades", {
+      userId: args.userId,
+      date: args.date,
+      entry: args.entry,
+      withdrawal: args.withdrawal,
+      balance: args.balance,
+      profit: args.profit,
+      memo: args.memo,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // 생성된 거래 정보 반환
+    const trade = await ctx.db.get(tradeId);
+    return {
+      _id: tradeId,
+      id: tradeId,
+      date: args.date,
+      entry: args.entry,
+      withdrawal: args.withdrawal,
+      balance: args.balance,
+      profit: args.profit,
+      memo: args.memo,
+      createdAt: trade?.createdAt,
+      updatedAt: trade?.updatedAt,
+    };
+  },
+});
+
 // 거래 추가
 export const addTrade = mutation({
   args: {

@@ -7,6 +7,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/convex@1.16.2/dist/browser.js"></script>
     <script>
         // Recharts 로딩 확인
         window.addEventListener('load', function() {
@@ -14,6 +15,7 @@
             if (window.Recharts) {
                 console.log('Available components:', Object.keys(window.Recharts));
             }
+            console.log('Convex loaded:', !!window.Convex);
         });
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,8 +84,20 @@
     <div id="root"></div>
     
     <script>
-        // 임시로 Convex 비활성화하고 기본 localStorage 사용
-        window.convex = null;
+        // Convex 클라이언트 초기화
+        let convexClient = null;
+        
+        window.addEventListener('load', function() {
+            if (window.Convex && window.Convex.ConvexHttpClient) {
+                const CONVEX_URL = "https://superb-walrus-453.convex.cloud";
+                convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
+                window.convex = convexClient;
+                console.log('Convex client initialized');
+            } else {
+                console.warn('Convex not loaded, using localStorage only');
+                window.convex = null;
+            }
+        });
         
         const { useState, useEffect } = React;
         
@@ -373,8 +387,31 @@
                 localStorage.setItem(userKey, JSON.stringify(userData));
             };
 
+            // Convex에서 사용자 데이터 로딩
+            const loadUserDataFromConvex = async (userId) => {
+                try {
+                    const [userTrades, userJournals, userStrategies, userGoals] = await Promise.all([
+                        window.convex.query("trades:getUserTrades", { userId }),
+                        window.convex.query("journals:getUserJournals", { userId }),
+                        window.convex.query("strategies:getUserStrategies", { userId }),
+                        window.convex.query("goals:getUserGoals", { userId })
+                    ]);
+                    
+                    setTrades(userTrades || []);
+                    setJournals(userJournals || []);
+                    setStrategies(userStrategies || []);
+                    setGoals(userGoals || []);
+                } catch (error) {
+                    console.error('Error loading user data from Convex:', error);
+                    // Convex 실패시 로컬 데이터로 fallback
+                    if (user?.email) {
+                        loadUserData(user.email);
+                    }
+                }
+            };
+
             // 핸들러 함수들
-            const handleLogin = (event) => {
+            const handleLogin = async (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 const email = formData.get('email');
@@ -385,31 +422,75 @@
                     return;
                 }
                 
-                if (email && password.length >= 6) {
-                    const userData = {
-                        name: email.split('@')[0],
-                        email: email,
-                        avatar: '👤'
-                    };
-                    setUser(userData);
-                    setIsLoggedIn(true);
-                    setShowLoginModal(false);
-                    setError('');
+                if (password.length < 6) {
+                    setError('비밀번호는 6자 이상이어야 합니다.');
+                    return;
+                }
+
+                try {
+                    let userData = null;
                     
-                    // localStorage에 로그인 상태 저장
-                    localStorage.setItem('trading-diary-auth', JSON.stringify({
-                        isLoggedIn: true,
-                        user: userData
-                    }));
+                    // Convex가 있으면 서버 인증 시도
+                    if (window.convex) {
+                        try {
+                            const result = await window.convex.mutation("auth:signIn", { 
+                                email, 
+                                password 
+                            });
+                            
+                            if (result.success) {
+                                userData = {
+                                    id: result.user.id,
+                                    name: result.user.name,
+                                    email: result.user.email,
+                                    avatar: '👤'
+                                };
+                                
+                                // Convex에서 사용자 데이터 로드
+                                await loadUserDataFromConvex(result.user.id);
+                            } else {
+                                setError(result.error || '로그인에 실패했습니다.');
+                                return;
+                            }
+                        } catch (convexError) {
+                            console.log('Convex login failed, using local auth:', convexError);
+                            // Convex 실패 시 로컬 인증으로 fallback
+                            userData = {
+                                name: email.split('@')[0],
+                                email: email,
+                                avatar: '👤'
+                            };
+                            loadUserData(email);
+                        }
+                    } else {
+                        // Convex 없으면 로컬 인증
+                        userData = {
+                            name: email.split('@')[0],
+                            email: email,
+                            avatar: '👤'
+                        };
+                        loadUserData(email);
+                    }
                     
-                    // 사용자별 데이터 로드
-                    loadUserData(email);
-                } else {
-                    setError('올바른 이메일과 6자 이상의 비밀번호를 입력해주세요.');
+                    if (userData) {
+                        setUser(userData);
+                        setIsLoggedIn(true);
+                        setShowLoginModal(false);
+                        setError('');
+                        
+                        // localStorage에 로그인 상태 저장
+                        localStorage.setItem('trading-diary-auth', JSON.stringify({
+                            isLoggedIn: true,
+                            user: userData
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    setError('로그인 중 오류가 발생했습니다.');
                 }
             };
             
-            const handleSignup = (event) => {
+            const handleSignup = async (event) => {
                 event.preventDefault();
                 const formData = new FormData(event.target);
                 const email = formData.get('email');
@@ -430,34 +511,92 @@
                     setError('비밀번호는 6자 이상이어야 합니다.');
                     return;
                 }
-                
-                const userData = {
-                    name: email.split('@')[0],
-                    email: email,
-                    avatar: '👤'
-                };
-                setUser(userData);
-                setIsLoggedIn(true);
-                setShowLoginModal(false);
-                setError('');
-                
-                // localStorage에 로그인 상태 저장
-                localStorage.setItem('trading-diary-auth', JSON.stringify({
-                    isLoggedIn: true,
-                    user: userData
-                }));
-                
-                alert('회원가입이 완료되었습니다!');
-                
-                // 새 사용자는 기본 샘플 데이터로 시작
-                const sampleTrades = [
-                    { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
-                    { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' }
-                ];
-                setTrades(sampleTrades);
-                setJournals([]);
-                setStrategies([]);
-                setGoals([]);
+
+                try {
+                    let userData = null;
+                    
+                    // Convex가 있으면 서버 회원가입 시도
+                    if (window.convex) {
+                        try {
+                            const result = await window.convex.mutation("auth:signUp", { 
+                                email, 
+                                password,
+                                name: email.split('@')[0]
+                            });
+                            
+                            if (result.success) {
+                                userData = {
+                                    id: result.userId,
+                                    name: email.split('@')[0],
+                                    email: email,
+                                    avatar: '👤'
+                                };
+                                
+                                // 새 사용자는 빈 데이터로 시작
+                                setTrades([]);
+                                setJournals([]);
+                                setStrategies([]);
+                                setGoals([]);
+                            } else {
+                                setError(result.error || '회원가입에 실패했습니다.');
+                                return;
+                            }
+                        } catch (convexError) {
+                            console.log('Convex signup failed, using local signup:', convexError);
+                            // Convex 실패 시 로컬 가입으로 fallback
+                            userData = {
+                                name: email.split('@')[0],
+                                email: email,
+                                avatar: '👤'
+                            };
+                            
+                            // 새 사용자는 기본 샘플 데이터로 시작
+                            const sampleTrades = [
+                                { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
+                                { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' }
+                            ];
+                            setTrades(sampleTrades);
+                            setJournals([]);
+                            setStrategies([]);
+                            setGoals([]);
+                        }
+                    } else {
+                        // Convex 없으면 로컬 가입
+                        userData = {
+                            name: email.split('@')[0],
+                            email: email,
+                            avatar: '👤'
+                        };
+                        
+                        // 새 사용자는 기본 샘플 데이터로 시작
+                        const sampleTrades = [
+                            { id: 1, date: '2025-07-20', entry: 1000000, withdrawal: 0, balance: 1050000, profit: 50000, memo: '초기 투자' },
+                            { id: 2, date: '2025-07-21', entry: 0, withdrawal: 0, balance: 1080000, profit: 30000, memo: 'BTC 상승' }
+                        ];
+                        setTrades(sampleTrades);
+                        setJournals([]);
+                        setStrategies([]);
+                        setGoals([]);
+                    }
+                    
+                    if (userData) {
+                        setUser(userData);
+                        setIsLoggedIn(true);
+                        setShowLoginModal(false);
+                        setError('');
+                        
+                        // localStorage에 로그인 상태 저장
+                        localStorage.setItem('trading-diary-auth', JSON.stringify({
+                            isLoggedIn: true,
+                            user: userData
+                        }));
+                        
+                        alert('회원가입이 완료되었습니다!');
+                    }
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    setError('회원가입 중 오류가 발생했습니다.');
+                }
             };
 
             const handleLogout = () => {
@@ -468,7 +607,7 @@
                 localStorage.removeItem('trading-diary-auth');
             };
             
-            const handleSaveTrade = () => {
+            const handleSaveTrade = async () => {
                 const entry = parseFloat(currentTrade.entry) || 0;
                 const withdrawal = parseFloat(currentTrade.withdrawal) || 0;
                 const balance = parseFloat(currentTrade.balance) || 0;
@@ -489,6 +628,41 @@
                     profit: parseFloat(profit.toFixed(2))
                 };
                 
+                // Convex 동기화 시도
+                if (window.convex && user?.id) {
+                    try {
+                        if (editingTrade) {
+                            // 수정의 경우
+                            await window.convex.mutation("trades:updateTrade", {
+                                tradeId: editingTrade.id,
+                                userId: user.id,
+                                date: newTrade.date,
+                                entry: newTrade.entry,
+                                withdrawal: newTrade.withdrawal,
+                                balance: newTrade.balance,
+                                profit: newTrade.profit,
+                                memo: newTrade.memo || ""
+                            });
+                        } else {
+                            // 새 거래 추가
+                            await window.convex.mutation("trades:createTrade", {
+                                userId: user.id,
+                                date: newTrade.date,
+                                entry: newTrade.entry,
+                                withdrawal: newTrade.withdrawal,
+                                balance: newTrade.balance,
+                                profit: newTrade.profit,
+                                memo: newTrade.memo || ""
+                            });
+                        }
+                        console.log('Trade synced to Convex successfully');
+                    } catch (error) {
+                        console.error('Error syncing trade to Convex:', error);
+                        // Convex 실패 시 로컬만 저장하고 계속 진행
+                    }
+                }
+                
+                // 로컬 상태 업데이트
                 if (editingTrade) {
                     setTrades(prev => prev.map(t => t.id === editingTrade.id ? newTrade : t));
                 } else {
