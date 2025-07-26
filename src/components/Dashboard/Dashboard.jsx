@@ -68,15 +68,15 @@ export const Dashboard = ({ trades }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 수익 추이 차트 */}
         <div className="lg:col-span-2">
-          <div className="metric-card p-6">
-            <div className="flex justify-between items-center mb-4">
+          <div className="metric-card p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
               <h3 className="text-lg font-semibold">수익 추이</h3>
-              <div className="flex space-x-2">
+              <div className="flex space-x-1 sm:space-x-2 overflow-x-auto">
                 {Object.values(CHART_PERIODS).map(period => (
                   <button
                     key={period}
                     onClick={() => setChartPeriod(period)}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md transition-colors whitespace-nowrap ${
                       chartPeriod === period
                         ? 'bg-primary text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -87,7 +87,16 @@ export const Dashboard = ({ trades }) => {
                 ))}
               </div>
             </div>
-            <ProfitChart data={chartData} period={chartPeriod} />
+            
+            {/* 데스크톱 차트 */}
+            <div className="hidden lg:block">
+              <ProfitChart data={chartData} period={chartPeriod} />
+            </div>
+            
+            {/* 모바일 차트 */}
+            <div className="lg:hidden">
+              <ProfitChart data={chartData} period={chartPeriod} isMobile={true} />
+            </div>
           </div>
         </div>
 
