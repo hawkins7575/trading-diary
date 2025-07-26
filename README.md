@@ -1,6 +1,17 @@
-# Coin Trading Tracker
+# 📊 Coin Trading Tracker
 
-코인 거래 추적 및 분석을 위한 웹 애플리케이션입니다.
+> **실시간 코인 거래 추적 및 분석을 위한 현대적인 웹 애플리케이션**
+
+[![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?style=flat-square&logo=github)](https://github.com/yourusername/coin-trading-tracker)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+
+![Screenshot](https://via.placeholder.com/800x400/3a5ba0/ffffff?text=Coin+Trading+Tracker+Dashboard)
+
+## ✨ 데모
+
+🚀 **[라이브 데모 보기](https://yourusername.github.io/coin-trading-tracker/)**
 
 ## 🚀 주요 기능
 
