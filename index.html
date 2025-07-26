@@ -146,8 +146,8 @@
                 const saved = localStorage.getItem('trading-diary-auth');
                 if (saved) {
                     const authData = JSON.parse(saved);
-                    // Convex 인증만 허용
-                    return authData.authType === 'convex' ? authData.isLoggedIn : false;
+                    // Convex와 로컬 인증 모두 허용
+                    return (authData.authType === 'convex' || authData.authType === 'local') ? authData.isLoggedIn : false;
                 }
                 return false;
             });
@@ -155,8 +155,8 @@
                 const saved = localStorage.getItem('trading-diary-auth');
                 if (saved) {
                     const authData = JSON.parse(saved);
-                    // Convex 인증만 허용
-                    return authData.authType === 'convex' ? authData.user : null;
+                    // Convex와 로컬 인증 모두 허용
+                    return (authData.authType === 'convex' || authData.authType === 'local') ? authData.user : null;
                 }
                 return null;
             });
@@ -472,11 +472,39 @@
                 }
 
                 try {
-                    // Convex 서버 인증만 사용
+                    // Convex 서버 인증 시도, 실패 시 로컬 모드로 대체
                     if (!window.convex) {
-                        console.error('Convex client not available during login attempt');
-                        setError('서버에 연결할 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
-                        return;
+                        console.warn('Convex not available, using local authentication mode');
+                        
+                        // 로컬 모드: 간단한 이메일 기반 인증
+                        const localUsers = JSON.parse(localStorage.getItem('trading-diary-local-users') || '{}');
+                        
+                        if (localUsers[email] && localUsers[email].password === password) {
+                            const userData = {
+                                id: email,
+                                name: localUsers[email].name,
+                                email: email,
+                                avatar: '👤'
+                            };
+                            
+                            // 로컬 사용자 데이터 로드
+                            loadUserData(email);
+                            
+                            setUser(userData);
+                            setIsLoggedIn(true);
+                            setShowLoginModal(false);
+                            setError('');
+                            
+                            localStorage.setItem('trading-diary-auth', JSON.stringify({
+                                isLoggedIn: true,
+                                user: userData,
+                                authType: 'local'
+                            }));
+                            return;
+                        } else {
+                            setError('이메일 또는 비밀번호가 잘못되었습니다.');
+                            return;
+                        }
                     }
                     
                     console.log('Attempting login with Convex for:', email);
@@ -541,10 +569,52 @@
                 }
 
                 try {
-                    // Convex 서버 회원가입만 사용
+                    // Convex 서버 회원가입 시도, 실패 시 로컬 모드로 대체
                     if (!window.convex) {
-                        console.error('Convex client not available during signup attempt');
-                        setError('서버에 연결할 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+                        console.warn('Convex not available, using local registration mode');
+                        
+                        // 로컬 모드: localStorage에 사용자 저장
+                        const localUsers = JSON.parse(localStorage.getItem('trading-diary-local-users') || '{}');
+                        
+                        if (localUsers[email]) {
+                            setError('이미 존재하는 이메일입니다.');
+                            return;
+                        }
+                        
+                        // 새 사용자 등록
+                        localUsers[email] = {
+                            name: email.split('@')[0],
+                            password: password,
+                            createdAt: Date.now()
+                        };
+                        
+                        localStorage.setItem('trading-diary-local-users', JSON.stringify(localUsers));
+                        
+                        const userData = {
+                            id: email,
+                            name: email.split('@')[0],
+                            email: email,
+                            avatar: '👤'
+                        };
+                        
+                        // 새 사용자는 빈 데이터로 시작
+                        setTrades([]);
+                        setJournals([]);
+                        setStrategies([]);
+                        setGoals([]);
+                        
+                        setUser(userData);
+                        setIsLoggedIn(true);
+                        setShowLoginModal(false);
+                        setError('');
+                        
+                        localStorage.setItem('trading-diary-auth', JSON.stringify({
+                            isLoggedIn: true,
+                            user: userData,
+                            authType: 'local'
+                        }));
+                        
+                        alert('회원가입이 완료되었습니다! (로컬 모드)');
                         return;
                     }
                     
