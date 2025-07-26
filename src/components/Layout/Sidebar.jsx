@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Target, TrendingUp, HelpCircle, Menu, X, DollarSign } from 'lucide-react'
+import { BarChart3, BookOpen, Target, TrendingUp, HelpCircle, Menu, X, DollarSign, MessageSquare } from 'lucide-react'
 import { TABS } from '@/constants'
 
 const sidebarItems = [
@@ -8,6 +8,7 @@ const sidebarItems = [
   { id: TABS.STRATEGIES, label: '매매전략', icon: TrendingUp },
   { id: TABS.GOALS, label: '목표설정', icon: Target },
   { id: TABS.ANALYTICS, label: '매매복기', icon: BarChart3 },
+  { id: TABS.FEEDBACK, label: '요청사항', icon: MessageSquare },
   { id: TABS.HELP, label: '도움말', icon: HelpCircle },
 ]
 

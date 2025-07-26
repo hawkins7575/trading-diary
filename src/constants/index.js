@@ -45,6 +45,7 @@ export const TABS = {
   STRATEGIES: 'strategies',
   GOALS: 'goals',
   ANALYTICS: 'analytics',
+  FEEDBACK: 'feedback',
   HELP: 'help'
 }
 

@@ -9,6 +9,7 @@ import { StrategyList } from '@/components/Strategies/StrategyList'
 import { GoalList } from '@/components/Goals/GoalList'
 import { PatternAnalysis } from '@/components/Analytics/PatternAnalysis'
 import { HelpGuide } from '@/components/Help/HelpGuide'
+import { FeedbackList } from '@/components/Feedback/FeedbackList'
 import { LoginForm } from '@/components/Auth/LoginForm'
 import { TermsOfService } from '@/components/Legal/TermsOfService'
 import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
@@ -20,6 +21,7 @@ import { useTrades } from '@/hooks/useTrades'
 import { useJournals } from '@/hooks/useJournals'
 import { useStrategies } from '@/hooks/useStrategies'
 import { useGoals } from '@/hooks/useGoals'
+import { useFeedback } from '@/hooks/useFeedback'
 import { useAuth } from '@/hooks/useAuth'
 import { initializeSupabase, testSupabaseConnection } from '@/services/supabase'
 import { TABS } from '@/constants'
@@ -47,6 +49,7 @@ function App() {
   const { journals, addJournal, updateJournal, deleteJournal } = useJournals()
   const { strategies, addStrategy, updateStrategy, deleteStrategy } = useStrategies()
   const { goals, addGoal, updateGoal, deleteGoal, toggleGoalComplete } = useGoals()
+  const { feedbacks, addFeedback, updateFeedback, deleteFeedback } = useFeedback()
   
   // Modal hooks
   const confirmModal = useConfirmModal()
@@ -170,6 +173,16 @@ function App() {
       
       case TABS.ANALYTICS:
         return <PatternAnalysis trades={trades} />
+      
+      case TABS.FEEDBACK:
+        return (
+          <FeedbackList 
+            feedbacks={feedbacks}
+            onAddFeedback={addFeedback}
+            onUpdateFeedback={updateFeedback}
+            onDeleteFeedback={deleteFeedback}
+          />
+        )
       
       case TABS.HELP:
         return <HelpGuide />
