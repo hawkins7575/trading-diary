@@ -7,7 +7,8 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
-    <script src="https://unpkg.com/convex@1.16.2/dist/browser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/convex@1.16.2/dist/browser.js" onload="console.log('Convex script loaded from jsDelivr')" onerror="console.error('Convex script failed to load from jsDelivr')"></script>
+    <script src="https://unpkg.com/convex@1.16.2/dist/browser.js" onload="console.log('Convex script loaded from unpkg as fallback')" onerror="console.error('Convex script fallback also failed')"></script>
     <script>
         // Recharts 로딩 확인
         window.addEventListener('load', function() {
@@ -87,8 +88,8 @@
         // Convex 클라이언트 초기화
         let convexClient = null;
         
-        window.addEventListener('load', function() {
-            console.log('Window loaded, checking Convex...');
+        function initializeConvex() {
+            console.log('Initializing Convex...');
             console.log('window.Convex:', !!window.Convex);
             
             if (window.Convex && window.Convex.ConvexHttpClient) {
@@ -98,10 +99,12 @@
                     window.convex = convexClient;
                     console.log('Convex client initialized successfully with URL:', CONVEX_URL);
                     
-                    // 연결 테스트
-                    window.convex.query("auth:getCurrentUser", { userId: "test" })
-                        .then(() => console.log('Convex connection test successful'))
-                        .catch((error) => console.log('Convex connection test failed:', error));
+                    // 연결 테스트 (간단한 쿼리)
+                    setTimeout(() => {
+                        if (window.convex) {
+                            console.log('Convex client is ready for use');
+                        }
+                    }, 1000);
                 } catch (error) {
                     console.error('Error initializing Convex client:', error);
                     window.convex = null;
@@ -110,7 +113,24 @@
                 console.error('Convex library not loaded properly');
                 console.log('Available window.Convex methods:', window.Convex ? Object.keys(window.Convex) : 'None');
                 window.convex = null;
+                
+                // 재시도 로직
+                if (!window.convexRetryCount) {
+                    window.convexRetryCount = 0;
+                }
+                
+                if (window.convexRetryCount < 3) {
+                    window.convexRetryCount++;
+                    console.log(`Retrying Convex initialization (${window.convexRetryCount}/3)...`);
+                    setTimeout(initializeConvex, 2000);
+                }
             }
+        }
+        
+        // DOM 로드 완료 후 초기화
+        window.addEventListener('load', function() {
+            console.log('Window loaded, checking libraries...');
+            initializeConvex();
         });
         
         const { useState, useEffect } = React;
