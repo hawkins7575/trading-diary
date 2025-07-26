@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/Layout/Sidebar'
 import { Header } from '@/components/Layout/Header'
+import { Footer } from '@/components/Layout/Footer'
 import { Dashboard } from '@/components/Dashboard/Dashboard'
 import { TradeList } from '@/components/Trades/TradeList'
 import { JournalList } from '@/components/Journal/JournalList'
@@ -9,6 +10,10 @@ import { GoalList } from '@/components/Goals/GoalList'
 import { PatternAnalysis } from '@/components/Analytics/PatternAnalysis'
 import { HelpGuide } from '@/components/Help/HelpGuide'
 import { LoginForm } from '@/components/Auth/LoginForm'
+import { TermsOfService } from '@/components/Legal/TermsOfService'
+import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
+import { CookiePolicy } from '@/components/Legal/CookiePolicy'
+import { CookieConsent } from '@/components/Legal/CookieConsent'
 import { Modal, ConfirmModal, AlertModal } from '@/components/UI/Modal'
 import { useConfirmModal, useAlertModal } from '@/hooks/useModal'
 import { useTrades } from '@/hooks/useTrades'
@@ -24,6 +29,7 @@ function App() {
   const [activeTab, setActiveTab] = useState(TABS.DASHBOARD)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState('main')
   
   // Auth hook
   const { 
@@ -106,6 +112,14 @@ function App() {
     // Add other clear functions when implemented
   }
 
+  const handleNavigateToLegal = (page) => {
+    setCurrentPage(page)
+  }
+
+  const handleBackToMain = () => {
+    setCurrentPage('main')
+  }
+
   const renderTabContent = () => {
     switch (activeTab) {
       case TABS.DASHBOARD:
@@ -165,28 +179,79 @@ function App() {
     }
   }
 
+  const renderPageContent = () => {
+    switch (currentPage) {
+      case 'terms':
+        return (
+          <div>
+            <button 
+              onClick={handleBackToMain}
+              className="mb-4 px-4 py-2 text-primary hover:bg-primary-light rounded-lg transition-colors"
+            >
+              ← 메인으로 돌아가기
+            </button>
+            <TermsOfService />
+          </div>
+        )
+      case 'privacy':
+        return (
+          <div>
+            <button 
+              onClick={handleBackToMain}
+              className="mb-4 px-4 py-2 text-primary hover:bg-primary-light rounded-lg transition-colors"
+            >
+              ← 메인으로 돌아가기
+            </button>
+            <PrivacyPolicy />
+          </div>
+        )
+      case 'cookies':
+        return (
+          <div>
+            <button 
+              onClick={handleBackToMain}
+              className="mb-4 px-4 py-2 text-primary hover:bg-primary-light rounded-lg transition-colors"
+            >
+              ← 메인으로 돌아가기
+            </button>
+            <CookiePolicy />
+          </div>
+        )
+      default:
+        return renderTabContent()
+    }
+  }
+
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar 
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-      />
+      {currentPage === 'main' && (
+        <Sidebar 
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
+      )}
       
       <div className="flex-1 flex flex-col">
-        <Header 
-          user={user}
-          isLoggedIn={isLoggedIn}
-          onLogin={handleLogin}
-          onLogout={handleLogout}
-        />
+        {currentPage === 'main' && (
+          <Header 
+            user={user}
+            isLoggedIn={isLoggedIn}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+          />
+        )}
         
         <main className="flex-1 overflow-auto p-6">
           <div className="max-w-7xl mx-auto">
-            {renderTabContent()}
+            {renderPageContent()}
           </div>
         </main>
+
+        {currentPage === 'main' && (
+          <Footer onNavigate={handleNavigateToLegal} />
+        )}
       </div>
 
       {/* Login Modal */}
@@ -224,6 +289,9 @@ function App() {
         message={alertModal.alertData.message}
         type={alertModal.alertData.type}
       />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
     </div>
   )
 }
