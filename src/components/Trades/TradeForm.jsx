@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { TRADE_TAGS, TRADE_CHECKLIST, EMOTION_OPTIONS } from '@/constants'
+import { TRADE_TAGS, TRADE_CHECKLIST } from '@/constants'
 
 export const TradeForm = ({ 
   isOpen, 
@@ -16,9 +16,7 @@ export const TradeForm = ({
     balance: '',
     memo: '',
     tags: [],
-    checklist: {},
-    emotion: '',
-    confidence: 5
+    checklist: {}
   })
 
   const [activeTagCategory, setActiveTagCategory] = useState('success')
@@ -35,9 +33,7 @@ export const TradeForm = ({
         balance: '',
         memo: '',
         tags: [],
-        checklist: {},
-        emotion: '',
-        confidence: 5
+        checklist: {}
       })
     }
   }, [initialData, isOpen])
@@ -147,37 +143,6 @@ export const TradeForm = ({
                 rows="3"
                 placeholder="거래에 대한 메모를 입력하세요"
               />
-            </div>
-
-            {/* 거래 감정 및 확신도 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">거래 시 감정</label>
-                <select
-                  value={formData.emotion}
-                  onChange={(e) => setFormData(prev => ({ ...prev, emotion: e.target.value }))}
-                  className="form-select"
-                >
-                  <option value="">감정을 선택하세요</option>
-                  {EMOTION_OPTIONS.map(emotion => (
-                    <option key={emotion} value={emotion}>{emotion}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="form-label">확신도 (1-10)</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={formData.confidence}
-                  onChange={(e) => setFormData(prev => ({ ...prev, confidence: parseInt(e.target.value) }))}
-                  className="w-full"
-                />
-                <div className="text-center text-sm text-gray-600 mt-1">
-                  {formData.confidence}/10
-                </div>
-              </div>
             </div>
 
             {/* 패턴 태그 */}

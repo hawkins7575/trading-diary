@@ -31,14 +31,6 @@ export const TRADE_CHECKLIST = {
   '목표_수익률': '목표 수익률을 정했나요?'
 }
 
-export const EMOTION_OPTIONS = [
-  '매우_확신',
-  '확신',
-  '보통',
-  '불안',
-  '매우_불안'
-]
-
 export const TABS = {
   DASHBOARD: 'dashboard',
   JOURNAL: 'journal',
