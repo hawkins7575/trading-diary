@@ -72,23 +72,37 @@ export const PatternAnalysis = ({ trades }) => {
   const goalAchievement = calculateGoalAchievement(trades)
   const tradingFreq = getTradingFrequency(trades)
 
-  // 성공/실패 패턴별 차트 데이터
-  const successPatternData = Object.entries(tagStats)
-    .filter(([tag]) => TRADE_TAGS.success.includes(tag))
-    .map(([tag, stats]) => ({
-      name: tag.replace(/_/g, ' '),
-      count: stats.count,
-      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
-    }))
+  // 모든 패턴 차트 데이터 생성 (성공/실패 구분)
+  const allPatternData = [
+    // 성공 패턴들
+    ...TRADE_TAGS.success.map(tag => {
+      const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
+      return {
+        name: tag.replace(/_/g, ' '),
+        type: '성공패턴',
+        count: stats.count,
+        winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
+      }
+    }),
+    // 실패 패턴들
+    ...TRADE_TAGS.failure.map(tag => {
+      const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
+      return {
+        name: tag.replace(/_/g, ' '),
+        type: '실패패턴',
+        count: stats.count,
+        winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
+      }
+    })
+  ]
+
+  // 성공/실패 패턴별 필터링 (개선 제안용)
+  const successPatternData = allPatternData
+    .filter(item => item.type === '성공패턴' && item.count > 0)
     .sort((a, b) => b.count - a.count)
 
-  const failurePatternData = Object.entries(tagStats)
-    .filter(([tag]) => TRADE_TAGS.failure.includes(tag))
-    .map(([tag, stats]) => ({
-      name: tag.replace(/_/g, ' '),
-      count: stats.count,
-      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
-    }))
+  const failurePatternData = allPatternData
+    .filter(item => item.type === '실패패턴' && item.count > 0)
     .sort((a, b) => b.count - a.count)
 
   // 체크리스트 효과 데이터
@@ -249,71 +263,55 @@ export const PatternAnalysis = ({ trades }) => {
       <div className="metric-card p-6">
         <h3 className="text-lg font-semibold mb-4">패턴별 성과 분석</h3>
         
-        {(successPatternData.length > 0 || failurePatternData.length > 0) ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 성공 패턴 */}
-            <div>
-              <h4 className="text-md font-medium mb-3 text-green-700">✅ 성공 패턴</h4>
-              {successPatternData.length > 0 ? (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={successPatternData} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
-                        width={100}
-                        fontSize={12}
-                      />
-                      <Tooltip 
-                        formatter={(value, name) => {
-                          if (name === 'count') return [value, '거래 횟수']
-                          return [value, name]
-                        }}
-                      />
-                      <Bar dataKey="count" fill="#22c55e" name="거래 횟수" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">성공 패턴 데이터가 없습니다</p>
-              )}
-            </div>
-
-            {/* 실패 패턴 */}
-            <div>
-              <h4 className="text-md font-medium mb-3 text-red-700">❌ 실패 패턴</h4>
-              {failurePatternData.length > 0 ? (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={failurePatternData} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
-                        width={100}
-                        fontSize={12}
-                      />
-                      <Tooltip 
-                        formatter={(value, name) => {
-                          if (name === 'count') return [value, '거래 횟수']
-                          return [value, name]
-                        }}
-                      />
-                      <Bar dataKey="count" fill="#ef4444" name="거래 횟수" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">실패 패턴 데이터가 없습니다</p>
-              )}
-            </div>
+        <div className="h-96">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={allPatternData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name" 
+                angle={-45}
+                textAnchor="end"
+                height={100}
+                fontSize={11}
+              />
+              <YAxis label={{ value: '거래 횟수', angle: -90, position: 'insideLeft' }} />
+              <Tooltip 
+                formatter={(value, name) => {
+                  if (name === 'count') return [value, '거래 횟수']
+                  return [value, name]
+                }}
+                labelFormatter={(label, payload) => {
+                  if (payload && payload.length > 0) {
+                    const type = payload[0].payload.type
+                    return `${label} (${type})`
+                  }
+                  return label
+                }}
+              />
+              <Bar 
+                dataKey="count" 
+                name="거래 횟수"
+                fill={(entry) => entry.type === '성공패턴' ? '#22c55e' : '#ef4444'}
+              >
+                {allPatternData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.type === '성공패턴' ? '#22c55e' : '#ef4444'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* 범례 */}
+        <div className="flex justify-center mt-4 space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 rounded"></div>
+            <span className="text-sm text-gray-600">성공 패턴</span>
           </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">패턴 태그 데이터가 없습니다</p>
-        )}
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-red-500 rounded"></div>
+            <span className="text-sm text-gray-600">실패 패턴</span>
+          </div>
+        </div>
       </div>
 
 
