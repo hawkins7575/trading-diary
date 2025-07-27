@@ -3,7 +3,17 @@ import { MetricCard } from './MetricCard'
 import { CompactStats } from './CompactStats'
 import { ProfitChart } from './ProfitChart'
 import { RecentTrades } from './RecentTrades'
-import { calculateWinRate, calculateTotalProfit, formatCurrency, formatPercentage, getTradesByPeriod } from '@/utils/calculations'
+import { 
+  calculateWinRate, 
+  calculateTotalProfit, 
+  formatCurrency, 
+  formatPercentage, 
+  getTradesByPeriod,
+  getMaxProfit,
+  getMaxLoss,
+  getMaxWinStreak,
+  calculateAverageProfit
+} from '@/utils/calculations'
 import { CHART_PERIODS } from '@/constants'
 
 export const Dashboard = ({ trades }) => {
@@ -14,6 +24,10 @@ export const Dashboard = ({ trades }) => {
   const winRate = calculateWinRate(trades)
   const totalTrades = trades.length
   const currentBalance = trades.length > 0 ? parseFloat(trades[trades.length - 1].balance) || 0 : 0
+  const maxProfit = getMaxProfit(trades)
+  const maxLoss = getMaxLoss(trades)
+  const maxWinStreak = getMaxWinStreak(trades)
+  const averageProfit = calculateAverageProfit(trades)
 
   // 기간별 거래 데이터
   const periodTrades = getTradesByPeriod(trades, chartPeriod)
@@ -33,7 +47,10 @@ export const Dashboard = ({ trades }) => {
   const compactStats = [
     { label: '총 거래 횟수', value: `${totalTrades}회` },
     { label: '승률', value: formatPercentage(winRate) },
-    { label: '평균 수익', value: totalTrades > 0 ? formatCurrency(totalProfit / totalTrades) : '₩0' },
+    { label: '평균 수익', value: formatCurrency(averageProfit) },
+    { label: '최고 수익', value: formatCurrency(maxProfit) },
+    { label: '최고 손실', value: formatCurrency(maxLoss) },
+    { label: '최대 연승', value: `${maxWinStreak}연승` },
     { label: '최근 거래', value: trades.length > 0 ? trades[trades.length - 1].date : '-' }
   ]
 
@@ -56,6 +73,34 @@ export const Dashboard = ({ trades }) => {
           title="승률"
           value={formatPercentage(winRate)}
           subtitle={`${totalTrades}회 거래`}
+        />
+        <MetricCard
+          title="평균 수익"
+          value={formatCurrency(averageProfit)}
+          subtitle="거래당 평균"
+          className={averageProfit >= 0 ? 'border-l-2 lg:border-l-4 border-blue-500' : 'border-l-2 lg:border-l-4 border-red-500'}
+        />
+      </div>
+
+      {/* 추가 통계 카드들 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+        <MetricCard
+          title="최고 수익"
+          value={formatCurrency(maxProfit)}
+          subtitle="단일 거래"
+          className="border-l-2 lg:border-l-4 border-green-500"
+        />
+        <MetricCard
+          title="최고 손실"
+          value={formatCurrency(maxLoss)}
+          subtitle="단일 거래"
+          className="border-l-2 lg:border-l-4 border-red-500"
+        />
+        <MetricCard
+          title="최대 연승"
+          value={`${maxWinStreak}연승`}
+          subtitle="연속 수익"
+          className="border-l-2 lg:border-l-4 border-purple-500"
         />
         <MetricCard
           title="거래 횟수"

@@ -1,6 +1,18 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 import { TRADE_TAGS } from '@/constants'
-import { formatCurrency, formatPercentage } from '@/utils/calculations'
+import { 
+  formatCurrency, 
+  formatPercentage, 
+  getMaxProfit, 
+  getMaxLoss, 
+  getMaxWinStreak, 
+  getMaxLossStreak, 
+  getMonthlyReturns, 
+  getProfitDistribution, 
+  calculateGoalAchievement, 
+  getTradingFrequency,
+  calculateAverageProfit 
+} from '@/utils/calculations'
 
 const COLORS = ['#3a5ba0', '#f7c873', '#6ea3c1', '#4ade80', '#f87171', '#a855f7', '#06b6d4', '#84cc16']
 
@@ -62,6 +74,17 @@ export const PatternAnalysis = ({ trades }) => {
 
   const { tagStats, checklistStats, emotionStats } = calculatePatternStats()
 
+  // 상세 통계 계산
+  const maxProfit = getMaxProfit(trades)
+  const maxLoss = getMaxLoss(trades)
+  const maxWinStreak = getMaxWinStreak(trades)
+  const maxLossStreak = getMaxLossStreak(trades)
+  const averageProfit = calculateAverageProfit(trades)
+  const monthlyReturns = getMonthlyReturns(trades)
+  const profitDistribution = getProfitDistribution(trades)
+  const goalAchievement = calculateGoalAchievement(trades)
+  const tradingFreq = getTradingFrequency(trades)
+
   // 태그 차트 데이터
   const tagChartData = Object.entries(tagStats)
     .map(([tag, stats]) => ({
@@ -109,6 +132,129 @@ export const PatternAnalysis = ({ trades }) => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">매매복기</h2>
+
+      {/* 상세 통계 카드들 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="metric-card p-4 text-center">
+          <div className="text-2xl font-bold text-green-600">{formatCurrency(maxProfit)}</div>
+          <div className="text-sm text-gray-600">최고 수익</div>
+        </div>
+        <div className="metric-card p-4 text-center">
+          <div className="text-2xl font-bold text-red-600">{formatCurrency(maxLoss)}</div>
+          <div className="text-sm text-gray-600">최고 손실</div>
+        </div>
+        <div className="metric-card p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600">{formatCurrency(averageProfit)}</div>
+          <div className="text-sm text-gray-600">평균 수익</div>
+        </div>
+        <div className="metric-card p-4 text-center">
+          <div className="text-2xl font-bold text-purple-600">{formatPercentage(goalAchievement.achievementRate)}</div>
+          <div className="text-sm text-gray-600">이번달 목표 달성률</div>
+        </div>
+      </div>
+
+      {/* 연승/연패 및 거래 빈도 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="metric-card p-6">
+          <h3 className="text-lg font-semibold mb-4">연승/연패 기록</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-3xl font-bold text-green-600">{maxWinStreak}</div>
+              <div className="text-sm text-gray-600">최대 연승</div>
+            </div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-3xl font-bold text-red-600">{maxLossStreak}</div>
+              <div className="text-sm text-gray-600">최대 연패</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card p-6">
+          <h3 className="text-lg font-semibold mb-4">거래 빈도</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-600">일평균:</span>
+              <span className="font-semibold">{tradingFreq.dailyAvg.toFixed(1)}회</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">주평균:</span>
+              <span className="font-semibold">{tradingFreq.weeklyAvg.toFixed(1)}회</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">월평균:</span>
+              <span className="font-semibold">{tradingFreq.monthlyAvg.toFixed(1)}회</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 월별 수익률 추이 */}
+      {monthlyReturns.length > 0 && (
+        <div className="metric-card p-6">
+          <h3 className="text-lg font-semibold mb-4">월별 수익률 추이</h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyReturns}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'profit') return [formatCurrency(value), '월 수익']
+                    if (name === 'winRate') return [formatPercentage(value), '승률']
+                    return [value, name]
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="profit" 
+                  stroke="#3a5ba0" 
+                  strokeWidth={2}
+                  name="월 수익"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="winRate" 
+                  stroke="#f7c873" 
+                  strokeWidth={2}
+                  yAxisId="right"
+                  name="승률"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* 수익 분포 */}
+      {profitDistribution.ranges.length > 0 && (
+        <div className="metric-card p-6">
+          <h3 className="text-lg font-semibold mb-4">수익 분포</h3>
+          <div className="space-y-3">
+            {profitDistribution.ranges.map((range, index) => (
+              <div key={range.label} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="font-medium">{range.label}</span>
+                <div className="text-right">
+                  <div className="font-semibold">{range.count}회</div>
+                  <div className="text-sm text-gray-600">
+                    {((range.count / trades.length) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+            <div className="text-sm font-medium text-blue-800">
+              수익 거래: {profitDistribution.stats.totalProfitTrades}회 
+              ({formatPercentage(profitDistribution.stats.profitTradeRatio)})
+            </div>
+            <div className="text-sm font-medium text-red-800">
+              손실 거래: {profitDistribution.stats.totalLossTrades}회 
+              ({formatPercentage(100 - profitDistribution.stats.profitTradeRatio)})
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 패턴별 성과 분석 */}
       <div className="metric-card p-6">
