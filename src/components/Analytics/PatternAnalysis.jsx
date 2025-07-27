@@ -19,11 +19,10 @@ const COLORS = ['#3a5ba0', '#f7c873', '#6ea3c1', '#4ade80', '#f87171', '#a855f7'
 export const PatternAnalysis = ({ trades }) => {
   // 패턴 분석 데이터 계산
   const calculatePatternStats = () => {
-    if (trades.length === 0) return { tagStats: {}, checklistStats: {}, emotionStats: {} }
+    if (trades.length === 0) return { tagStats: {}, checklistStats: {} }
     
     const tagStats = {}
     const checklistStats = {}
-    const emotionStats = {}
     
     // 태그별 통계
     trades.forEach(trade => {
@@ -57,22 +56,10 @@ export const PatternAnalysis = ({ trades }) => {
       }
     })
     
-    // 감정별 통계
-    trades.forEach(trade => {
-      if (trade.emotion) {
-        if (!emotionStats[trade.emotion]) {
-          emotionStats[trade.emotion] = { count: 0, profit: 0, wins: 0 }
-        }
-        emotionStats[trade.emotion].count++
-        emotionStats[trade.emotion].profit += trade.profit || 0
-        if ((trade.profit || 0) > 0) emotionStats[trade.emotion].wins++
-      }
-    })
-    
-    return { tagStats, checklistStats, emotionStats }
+    return { tagStats, checklistStats }
   }
 
-  const { tagStats, checklistStats, emotionStats } = calculatePatternStats()
+  const { tagStats, checklistStats } = calculatePatternStats()
 
   // 상세 통계 계산
   const maxProfit = getMaxProfit(trades)
@@ -94,15 +81,6 @@ export const PatternAnalysis = ({ trades }) => {
       avgProfit: stats.count > 0 ? stats.profit / stats.count : 0
     }))
     .sort((a, b) => b.count - a.count)
-
-  // 감정별 차트 데이터
-  const emotionChartData = Object.entries(emotionStats)
-    .map(([emotion, stats]) => ({
-      name: emotion.replace(/_/g, ' '),
-      count: stats.count,
-      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
-    }))
-    .sort((a, b) => b.winRate - a.winRate)
 
   // 체크리스트 효과 데이터
   const checklistEffectData = Object.entries(checklistStats)
@@ -292,57 +270,6 @@ export const PatternAnalysis = ({ trades }) => {
         )}
       </div>
 
-      {/* 감정 상태별 성과 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="metric-card p-6">
-          <h3 className="text-lg font-semibold mb-4">감정 상태별 성과</h3>
-          {emotionChartData.length > 0 ? (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={emotionChartData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    dataKey="count"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {emotionChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [value, '거래 횟수']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">감정 데이터가 없습니다</p>
-          )}
-        </div>
-
-        {/* 감정별 승률 상세 */}
-        <div className="metric-card p-6">
-          <h3 className="text-lg font-semibold mb-4">감정별 승률</h3>
-          <div className="space-y-3">
-            {emotionChartData.map((emotion, index) => (
-              <div key={emotion.name} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                  <span className="font-medium">{emotion.name}</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">{formatPercentage(emotion.winRate)}</div>
-                  <div className="text-sm text-gray-600">{emotion.count}회</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* 체크리스트 효과 분석 */}
       <div className="metric-card p-6">
@@ -411,16 +338,6 @@ export const PatternAnalysis = ({ trades }) => {
             </div>
           )}
 
-          {/* 감정 관리 제안 */}
-          {emotionChartData.length > 0 && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h4 className="font-medium text-yellow-800 mb-2">🧘 감정 관리</h4>
-              <p className="text-yellow-700">
-                '{emotionChartData.sort((a, b) => b.winRate - a.winRate)[0]?.name}' 상태일 때 
-                성과가 가장 좋습니다. 감정적으로 불안정한 상태에서는 거래를 피하는 것이 좋겠습니다.
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
