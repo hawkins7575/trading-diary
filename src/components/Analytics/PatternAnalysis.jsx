@@ -72,13 +72,22 @@ export const PatternAnalysis = ({ trades }) => {
   const goalAchievement = calculateGoalAchievement(trades)
   const tradingFreq = getTradingFrequency(trades)
 
-  // 태그 차트 데이터
-  const tagChartData = Object.entries(tagStats)
+  // 성공/실패 패턴별 차트 데이터
+  const successPatternData = Object.entries(tagStats)
+    .filter(([tag]) => TRADE_TAGS.success.includes(tag))
     .map(([tag, stats]) => ({
       name: tag.replace(/_/g, ' '),
       count: stats.count,
-      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0,
-      avgProfit: stats.count > 0 ? stats.profit / stats.count : 0
+      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const failurePatternData = Object.entries(tagStats)
+    .filter(([tag]) => TRADE_TAGS.failure.includes(tag))
+    .map(([tag, stats]) => ({
+      name: tag.replace(/_/g, ' '),
+      count: stats.count,
+      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
     }))
     .sort((a, b) => b.count - a.count)
 
@@ -239,31 +248,68 @@ export const PatternAnalysis = ({ trades }) => {
       {/* 패턴별 성과 분석 */}
       <div className="metric-card p-6">
         <h3 className="text-lg font-semibold mb-4">패턴별 성과 분석</h3>
-        {tagChartData.length > 0 ? (
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={tagChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                  fontSize={12}
-                />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => {
-                    if (name === 'winRate') return [formatPercentage(value), '승률']
-                    if (name === 'count') return [value, '거래 횟수']
-                    if (name === 'avgProfit') return [formatCurrency(value), '평균 수익']
-                    return [value, name]
-                  }}
-                />
-                <Bar dataKey="count" fill="#3a5ba0" name="거래 횟수" />
-                <Bar dataKey="winRate" fill="#f7c873" name="승률 (%)" />
-              </BarChart>
-            </ResponsiveContainer>
+        
+        {(successPatternData.length > 0 || failurePatternData.length > 0) ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 성공 패턴 */}
+            <div>
+              <h4 className="text-md font-medium mb-3 text-green-700">✅ 성공 패턴</h4>
+              {successPatternData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={successPatternData} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={100}
+                        fontSize={12}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          if (name === 'count') return [value, '거래 횟수']
+                          return [value, name]
+                        }}
+                      />
+                      <Bar dataKey="count" fill="#22c55e" name="거래 횟수" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">성공 패턴 데이터가 없습니다</p>
+              )}
+            </div>
+
+            {/* 실패 패턴 */}
+            <div>
+              <h4 className="text-md font-medium mb-3 text-red-700">❌ 실패 패턴</h4>
+              {failurePatternData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={failurePatternData} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={100}
+                        fontSize={12}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          if (name === 'count') return [value, '거래 횟수']
+                          return [value, name]
+                        }}
+                      />
+                      <Bar dataKey="count" fill="#ef4444" name="거래 횟수" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">실패 패턴 데이터가 없습니다</p>
+              )}
+            </div>
           </div>
         ) : (
           <p className="text-gray-500 text-center py-8">패턴 태그 데이터가 없습니다</p>
@@ -314,14 +360,24 @@ export const PatternAnalysis = ({ trades }) => {
       <div className="metric-card p-6">
         <h3 className="text-lg font-semibold mb-4">개선 제안</h3>
         <div className="space-y-3">
-          {/* 가장 성공적인 패턴 */}
-          {tagChartData.length > 0 && (
+          {/* 가장 많이 사용된 성공 패턴 */}
+          {successPatternData.length > 0 && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <h4 className="font-medium text-green-800 mb-2">✅ 성공 패턴 강화</h4>
               <p className="text-green-700">
-                '{tagChartData.sort((a, b) => b.winRate - a.winRate)[0]?.name}' 패턴의 승률이 
-                {formatPercentage(tagChartData.sort((a, b) => b.winRate - a.winRate)[0]?.winRate)}로 
-                가장 높습니다. 이 패턴을 더 자주 활용해보세요.
+                '{successPatternData[0]?.name}' 성공 패턴을 {successPatternData[0]?.count}회 사용했습니다. 
+                이 패턴을 더 자주 활용해보세요.
+              </p>
+            </div>
+          )}
+
+          {/* 가장 많이 사용된 실패 패턴 경고 */}
+          {failurePatternData.length > 0 && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="font-medium text-red-800 mb-2">⚠️ 실패 패턴 주의</h4>
+              <p className="text-red-700">
+                '{failurePatternData[0]?.name}' 실패 패턴이 {failurePatternData[0]?.count}회 발생했습니다. 
+                이 패턴을 피하도록 주의해보세요.
               </p>
             </div>
           )}
