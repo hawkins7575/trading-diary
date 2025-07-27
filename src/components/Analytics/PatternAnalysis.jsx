@@ -72,37 +72,41 @@ export const PatternAnalysis = ({ trades }) => {
   const goalAchievement = calculateGoalAchievement(trades)
   const tradingFreq = getTradingFrequency(trades)
 
-  // 모든 패턴 차트 데이터 생성 (성공/실패 구분)
+  // 성공/실패 패턴 데이터를 구분하여 생성
+  const successPatternChartData = TRADE_TAGS.success.map(tag => {
+    const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
+    return {
+      name: tag.replace(/_/g, ' '),
+      category: '✅ 성공패턴',
+      count: stats.count,
+      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
+    }
+  })
+
+  const failurePatternChartData = TRADE_TAGS.failure.map(tag => {
+    const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
+    return {
+      name: tag.replace(/_/g, ' '),
+      category: '❌ 실패패턴',
+      count: stats.count,
+      winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
+    }
+  })
+
+  // 구분선을 위한 빈 데이터 추가
   const allPatternData = [
-    // 성공 패턴들
-    ...TRADE_TAGS.success.map(tag => {
-      const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
-      return {
-        name: tag.replace(/_/g, ' '),
-        type: '성공패턴',
-        count: stats.count,
-        winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
-      }
-    }),
-    // 실패 패턴들
-    ...TRADE_TAGS.failure.map(tag => {
-      const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
-      return {
-        name: tag.replace(/_/g, ' '),
-        type: '실패패턴',
-        count: stats.count,
-        winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
-      }
-    })
+    ...successPatternChartData,
+    { name: '', category: 'divider', count: 0, isEmpty: true }, // 구분선
+    ...failurePatternChartData
   ]
 
   // 성공/실패 패턴별 필터링 (개선 제안용)
-  const successPatternData = allPatternData
-    .filter(item => item.type === '성공패턴' && item.count > 0)
+  const successPatternData = successPatternChartData
+    .filter(item => item.count > 0)
     .sort((a, b) => b.count - a.count)
 
-  const failurePatternData = allPatternData
-    .filter(item => item.type === '실패패턴' && item.count > 0)
+  const failurePatternData = failurePatternChartData
+    .filter(item => item.count > 0)
     .sort((a, b) => b.count - a.count)
 
   // 체크리스트 효과 데이터
@@ -263,53 +267,88 @@ export const PatternAnalysis = ({ trades }) => {
       <div className="metric-card p-6">
         <h3 className="text-lg font-semibold mb-4">패턴별 성과 분석</h3>
         
-        <div className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={allPatternData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                fontSize={11}
-              />
-              <YAxis label={{ value: '거래 횟수', angle: -90, position: 'insideLeft' }} />
-              <Tooltip 
-                formatter={(value, name) => {
-                  if (name === 'count') return [value, '거래 횟수']
-                  return [value, name]
-                }}
-                labelFormatter={(label, payload) => {
-                  if (payload && payload.length > 0) {
-                    const type = payload[0].payload.type
-                    return `${label} (${type})`
-                  }
-                  return label
-                }}
-              />
-              <Bar 
-                dataKey="count" 
-                name="거래 횟수"
-                fill={(entry) => entry.type === '성공패턴' ? '#22c55e' : '#ef4444'}
-              >
-                {allPatternData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.type === '성공패턴' ? '#22c55e' : '#ef4444'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* 범례 */}
-        <div className="flex justify-center mt-4 space-x-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-green-500 rounded"></div>
-            <span className="text-sm text-gray-600">성공 패턴</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 성공 패턴 차트 */}
+          <div>
+            <h4 className="text-md font-medium mb-3 text-green-700 text-center">✅ 성공 패턴</h4>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={successPatternChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={10}
+                  />
+                  <YAxis label={{ value: '횟수', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip 
+                    formatter={(value) => [value, '거래 횟수']}
+                    labelFormatter={(label) => `${label} (성공 패턴)`}
+                  />
+                  <Bar dataKey="count" fill="#22c55e" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-red-500 rounded"></div>
-            <span className="text-sm text-gray-600">실패 패턴</span>
+
+          {/* 실패 패턴 차트 */}
+          <div>
+            <h4 className="text-md font-medium mb-3 text-red-700 text-center">❌ 실패 패턴</h4>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={failurePatternChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={10}
+                  />
+                  <YAxis label={{ value: '횟수', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip 
+                    formatter={(value) => [value, '거래 횟수']}
+                    labelFormatter={(label) => `${label} (실패 패턴)`}
+                  />
+                  <Bar dataKey="count" fill="#ef4444" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* 패턴 목록 */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* 성공 패턴 목록 */}
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h5 className="font-medium text-green-800 mb-2">성공 패턴 목록</h5>
+            <div className="text-sm text-green-700 space-y-1">
+              {TRADE_TAGS.success.map(tag => (
+                <div key={tag} className="flex justify-between">
+                  <span>{tag.replace(/_/g, ' ')}</span>
+                  <span className="font-medium">
+                    {tagStats[tag]?.count || 0}회
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 실패 패턴 목록 */}
+          <div className="bg-red-50 p-4 rounded-lg">
+            <h5 className="font-medium text-red-800 mb-2">실패 패턴 목록</h5>
+            <div className="text-sm text-red-700 space-y-1">
+              {TRADE_TAGS.failure.map(tag => (
+                <div key={tag} className="flex justify-between">
+                  <span>{tag.replace(/_/g, ' ')}</span>
+                  <span className="font-medium">
+                    {tagStats[tag]?.count || 0}회
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
