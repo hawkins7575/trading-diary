@@ -197,7 +197,8 @@ export const PatternAnalysis = ({ trades }) => {
               <LineChart data={monthlyReturns}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
-                <YAxis />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
                 <Tooltip 
                   formatter={(value, name) => {
                     if (name === 'profit') return [formatCurrency(value), '월 수익']
@@ -211,6 +212,7 @@ export const PatternAnalysis = ({ trades }) => {
                   stroke="#3a5ba0" 
                   strokeWidth={2}
                   name="월 수익"
+                  yAxisId="left"
                 />
                 <Line 
                   type="monotone" 
