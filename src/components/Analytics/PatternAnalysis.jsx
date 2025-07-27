@@ -136,20 +136,20 @@ export const PatternAnalysis = ({ trades }) => {
       {/* 상세 통계 카드들 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="metric-card p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{formatCurrency(maxProfit)}</div>
-          <div className="text-sm text-gray-600">최고 수익</div>
+          <div className="text-lg font-semibold text-gray-700">{formatCurrency(maxProfit)}</div>
+          <div className="text-sm text-gray-500">최고 수익</div>
         </div>
         <div className="metric-card p-4 text-center">
-          <div className="text-2xl font-bold text-red-600">{formatCurrency(maxLoss)}</div>
-          <div className="text-sm text-gray-600">최고 손실</div>
+          <div className="text-lg font-semibold text-gray-700">{formatCurrency(maxLoss)}</div>
+          <div className="text-sm text-gray-500">최고 손실</div>
         </div>
         <div className="metric-card p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{formatCurrency(averageProfit)}</div>
-          <div className="text-sm text-gray-600">평균 수익</div>
+          <div className="text-lg font-semibold text-gray-700">{formatCurrency(averageProfit)}</div>
+          <div className="text-sm text-gray-500">평균 수익</div>
         </div>
         <div className="metric-card p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600">{formatPercentage(goalAchievement.achievementRate)}</div>
-          <div className="text-sm text-gray-600">이번달 목표 달성률</div>
+          <div className="text-lg font-semibold text-gray-700">{formatPercentage(goalAchievement.achievementRate)}</div>
+          <div className="text-sm text-gray-500">이번달 목표 달성률</div>
         </div>
       </div>
 
