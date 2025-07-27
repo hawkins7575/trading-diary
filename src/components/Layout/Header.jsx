@@ -41,15 +41,6 @@ export const Header = ({ user, isLoggedIn, onLogin, onLogout, onNavigate }) => {
                 >
                   개인정보 처리방침
                 </button>
-                <button
-                  onClick={() => {
-                    setShowLegalMenu(false)
-                    onNavigate('cookies')
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors text-sm"
-                >
-                  쿠키 정책
-                </button>
               </div>
             )}
           </div>

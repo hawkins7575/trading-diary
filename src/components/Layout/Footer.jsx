@@ -27,21 +27,6 @@ export const Footer = ({ onNavigate }) => {
             >
               개인정보처리방침
             </button>
-            <button 
-              onClick={() => handleLegalPageClick('cookies')}
-              className="text-gray-500 hover:text-primary transition-colors whitespace-nowrap"
-            >
-              쿠키정책
-            </button>
-            <button 
-              onClick={() => {
-                localStorage.removeItem('cookie-consent')
-                window.location.reload()
-              }}
-              className="text-gray-500 hover:text-primary transition-colors whitespace-nowrap"
-            >
-              쿠키설정
-            </button>
           </div>
         </div>
       </div>

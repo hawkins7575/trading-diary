@@ -27,11 +27,4 @@
     <priority>0.3</priority>
   </url>
 
-  <url>
-    <loc>https://trading-diary-five.vercel.app/cookies</loc>
-    <lastmod>2024-07-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.2</priority>
-  </url>
-
 </urlset>

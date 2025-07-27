@@ -13,8 +13,6 @@ import { FeedbackList } from '@/components/Feedback/FeedbackList'
 import { LoginForm } from '@/components/Auth/LoginForm'
 import { TermsOfService } from '@/components/Legal/TermsOfService'
 import { PrivacyPolicy } from '@/components/Legal/PrivacyPolicy'
-import { CookiePolicy } from '@/components/Legal/CookiePolicy'
-import { CookieConsent } from '@/components/Legal/CookieConsent'
 import { Modal, ConfirmModal, AlertModal } from '@/components/UI/Modal'
 import { useConfirmModal, useAlertModal } from '@/hooks/useModal'
 import { useTrades } from '@/hooks/useTrades'
@@ -218,18 +216,6 @@ function App() {
             <PrivacyPolicy />
           </div>
         )
-      case 'cookies':
-        return (
-          <div>
-            <button 
-              onClick={handleBackToMain}
-              className="mb-4 px-4 py-2 text-primary hover:bg-primary-light rounded-lg transition-colors"
-            >
-              ← 메인으로 돌아가기
-            </button>
-            <CookiePolicy />
-          </div>
-        )
       default:
         return renderTabContent()
     }
@@ -304,8 +290,6 @@ function App() {
         type={alertModal.alertData.type}
       />
 
-      {/* Cookie Consent Banner */}
-      <CookieConsent />
     </div>
   )
 }
