@@ -15,6 +15,12 @@ export const useJournals = () => {
       if (isLoggedIn) {
         try {
           const supabase = getSupabaseClient()
+          if (!supabase) {
+            console.warn('Supabase client not initialized, falling back to local storage')
+            setJournalsState(getJournals())
+            setLoading(false)
+            return
+          }
           const { data, error } = await supabase
             .from('journals')
             .select('*')
@@ -38,6 +44,13 @@ export const useJournals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedJournals = [{ ...journal, id: Date.now() }, ...journals]
+          setJournalsState(updatedJournals)
+          setLocalJournals(updatedJournals)
+          return
+        }
         const { data, error } = await supabase
           .from('journals')
           .insert([{ ...journal, user_id: auth.user.id }])
@@ -58,6 +71,13 @@ export const useJournals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedJournals = journals.map(j => j.id === id ? { ...j, ...updatedJournal } : j)
+          setJournalsState(updatedJournals)
+          setLocalJournals(updatedJournals)
+          return
+        }
         const { error } = await supabase
           .from('journals')
           .update(updatedJournal)
@@ -78,6 +98,13 @@ export const useJournals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedJournals = journals.filter(j => j.id !== id)
+          setJournalsState(updatedJournals)
+          setLocalJournals(updatedJournals)
+          return
+        }
         const { error } = await supabase
           .from('journals')
           .delete()
