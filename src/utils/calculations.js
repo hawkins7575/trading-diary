@@ -44,15 +44,18 @@ export const getTradesByPeriod = (trades, period = 'daily') => {
   return trades.filter(trade => new Date(trade.date) >= periodStart)
 }
 
-export const formatCurrency = (amount, currency = 'KRW') => {
-  const formatter = new Intl.NumberFormat('ko-KR', {
+export const formatCurrency = (amount, currency = 'USD') => {
+  const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })
   return formatter.format(amount)
 }
 
 export const formatPercentage = (value, decimals = 1) => {
+  if (value === undefined || value === null) return '0%'
   return `${value.toFixed(decimals)}%`
 }
 
@@ -158,14 +161,14 @@ export const getProfitDistribution = (trades) => {
   
   const profits = trades.map(trade => calculateProfit(trade.entry, trade.withdrawal))
   const ranges = [
-    { label: '-50만원 이하', min: -Infinity, max: -500000, count: 0 },
-    { label: '-50만원 ~ -10만원', min: -500000, max: -100000, count: 0 },
-    { label: '-10만원 ~ -1만원', min: -100000, max: -10000, count: 0 },
-    { label: '-1만원 ~ 0원', min: -10000, max: 0, count: 0 },
-    { label: '0원 ~ 1만원', min: 0, max: 10000, count: 0 },
-    { label: '1만원 ~ 10만원', min: 10000, max: 100000, count: 0 },
-    { label: '10만원 ~ 50만원', min: 100000, max: 500000, count: 0 },
-    { label: '50만원 이상', min: 500000, max: Infinity, count: 0 }
+    { label: '-$500 이하', min: -Infinity, max: -500, count: 0 },
+    { label: '-$500 ~ -$100', min: -500, max: -100, count: 0 },
+    { label: '-$100 ~ -$10', min: -100, max: -10, count: 0 },
+    { label: '-$10 ~ $0', min: -10, max: 0, count: 0 },
+    { label: '$0 ~ $10', min: 0, max: 10, count: 0 },
+    { label: '$10 ~ $100', min: 10, max: 100, count: 0 },
+    { label: '$100 ~ $500', min: 100, max: 500, count: 0 },
+    { label: '$500 이상', min: 500, max: Infinity, count: 0 }
   ]
   
   profits.forEach(profit => {
@@ -190,7 +193,7 @@ export const getProfitDistribution = (trades) => {
 }
 
 // 목표 달성률 계산 (예: 월 목표 수익 대비)
-export const calculateGoalAchievement = (trades, monthlyGoal = 1000000) => {
+export const calculateGoalAchievement = (trades, monthlyGoal = 1000) => {
   const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM 형식
   
   const currentMonthTrades = trades.filter(trade => {

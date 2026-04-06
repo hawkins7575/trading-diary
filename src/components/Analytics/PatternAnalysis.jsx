@@ -1,5 +1,19 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts'
 import { TRADE_TAGS } from '@/constants'
+import { 
+  Trophy, 
+  Skull, 
+  TrendingUp, 
+  Activity, 
+  Target, 
+  Zap, 
+  Lightbulb, 
+  CheckCircle2, 
+  XCircle,
+  BarChart3,
+  Calendar,
+  AlertCircle
+} from 'lucide-react'
 import { 
   formatCurrency, 
   formatPercentage, 
@@ -14,7 +28,13 @@ import {
   calculateAverageProfit 
 } from '@/utils/calculations'
 
-const COLORS = ['#3a5ba0', '#f7c873', '#6ea3c1', '#4ade80', '#f87171', '#a855f7', '#06b6d4', '#84cc16']
+const COLORS = {
+  success: '#22c55e',
+  danger: '#ef4444',
+  primary: '#3b82f6',
+  warning: '#f59e0b',
+  slate: '#64748b'
+}
 
 export const PatternAnalysis = ({ trades }) => {
   // 패턴 분석 데이터 계산
@@ -77,7 +97,7 @@ export const PatternAnalysis = ({ trades }) => {
     const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
     return {
       name: tag.replace(/_/g, ' '),
-      category: '✅ 성공패턴',
+      category: 'SUCCESS',
       count: stats.count,
       winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
     }
@@ -87,20 +107,12 @@ export const PatternAnalysis = ({ trades }) => {
     const stats = tagStats[tag] || { count: 0, wins: 0, profit: 0 }
     return {
       name: tag.replace(/_/g, ' '),
-      category: '❌ 실패패턴',
+      category: 'FAILURE',
       count: stats.count,
       winRate: stats.count > 0 ? (stats.wins / stats.count) * 100 : 0
     }
   })
 
-  // 구분선을 위한 빈 데이터 추가
-  const allPatternData = [
-    ...successPatternChartData,
-    { name: '', category: 'divider', count: 0, isEmpty: true }, // 구분선
-    ...failurePatternChartData
-  ]
-
-  // 성공/실패 패턴별 필터링 (개선 제안용)
   const successPatternData = successPatternChartData
     .filter(item => item.count > 0)
     .sort((a, b) => b.count - a.count)
@@ -125,227 +137,133 @@ export const PatternAnalysis = ({ trades }) => {
 
   if (trades.length === 0) {
     return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">매매복기</h2>
-        <div className="metric-card p-8 text-center">
-          <p className="text-gray-500">거래 데이터가 부족합니다. 더 많은 거래를 추가해주세요.</p>
+      <div className="premium-card py-20 text-center">
+        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+          <BarChart3 size={40} />
         </div>
+        <h3 className="text-xl font-black text-slate-800">데이터 분석이 불가능합니다</h3>
+        <p className="text-slate-500 mt-2">최소 5건 이상의 거래 데이터를 입력하면 심층 분석 리포트가 생성됩니다.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">매매복기</h2>
-
-      {/* 상세 통계 카드들 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="metric-card p-4 text-center">
-          <div className="text-lg font-semibold text-gray-700">{formatCurrency(maxProfit)}</div>
-          <div className="text-sm text-gray-500">최고 수익</div>
+    <div className="space-y-10 animate-in fade-in duration-700">
+      {/* 분석 헤더 섹션 */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 pb-8">
+        <div>
+          <div className="flex items-center space-x-2 text-primary mb-1">
+            <Activity size={18} fill="currentColor" />
+            <span className="text-xs font-black uppercase tracking-widest">Advanced Intelligence</span>
+          </div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">하이테크 매매 패턴 분석</h2>
+          <p className="text-slate-500 mt-2 text-sm max-w-2xl">
+            과거의 성과를 분석하여 승리 확률을 높이는 전략적 인사이트를 제공합니다. 반복되는 성공과 실패의 패턴을 시각화합니다.
+          </p>
         </div>
-        <div className="metric-card p-4 text-center">
-          <div className="text-lg font-semibold text-gray-700">{formatCurrency(maxLoss)}</div>
-          <div className="text-sm text-gray-500">최고 손실</div>
-        </div>
-        <div className="metric-card p-4 text-center">
-          <div className="text-lg font-semibold text-gray-700">{formatCurrency(averageProfit)}</div>
-          <div className="text-sm text-gray-500">평균 수익</div>
-        </div>
-        <div className="metric-card p-4 text-center">
-          <div className="text-lg font-semibold text-gray-700">{formatPercentage(goalAchievement.achievementRate)}</div>
-          <div className="text-sm text-gray-500">이번달 목표 달성률</div>
+        <div className="flex items-center space-x-3 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+          <Calendar size={16} className="text-slate-400" />
+          <span className="text-xs font-black text-slate-600">누적 데이터: {trades.length}건</span>
         </div>
       </div>
 
-      {/* 연승/연패 및 거래 빈도 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="metric-card p-6">
-          <h3 className="text-lg font-semibold mb-4">연승/연패 기록</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-3xl font-bold text-green-600">{maxWinStreak}</div>
-              <div className="text-sm text-gray-600">최대 연승</div>
+      {/* 핵심 분석 지표 그리드 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: '최고 수익 (Max)', value: maxProfit, icon: <Trophy size={18} />, color: 'text-success', bg: 'bg-success/10' },
+          { label: '최고 손실 (Drawdown)', value: maxLoss, icon: <Skull size={18} />, color: 'text-danger', bg: 'bg-danger/10' },
+          { label: '평균 기대 수익 (EV)', value: averageProfit, icon: <Zap size={18} />, color: 'text-primary', bg: 'bg-primary/10' },
+          { label: '목표 달성 지수', value: goalAchievement.achievementRate, icon: <Target size={18} />, color: 'text-warning', bg: 'bg-warning/10', isPercent: true },
+        ].map((item, i) => (
+          <div key={i} className="premium-card p-6 flex flex-col items-center text-center group">
+            <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+              {item.icon}
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-3xl font-bold text-red-600">{maxLossStreak}</div>
-              <div className="text-sm text-gray-600">최대 연패</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card p-6">
-          <h3 className="text-lg font-semibold mb-4">거래 빈도</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">일평균:</span>
-              <span className="font-semibold">{tradingFreq.dailyAvg.toFixed(1)}회</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">주평균:</span>
-              <span className="font-semibold">{tradingFreq.weeklyAvg.toFixed(1)}회</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">월평균:</span>
-              <span className="font-semibold">{tradingFreq.monthlyAvg.toFixed(1)}회</span>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{item.label}</div>
+            <div className={`text-xl font-black text-slate-900 ${item.isPercent ? 'text-warning' : ''}`}>
+               {item.isPercent ? `${item.value.toFixed(1)}%` : formatCurrency(item.value)}
             </div>
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* 월별 수익률 추이 */}
-      {monthlyReturns.length > 0 && (
-        <div className="metric-card p-6">
-          <h3 className="text-lg font-semibold mb-4">월별 수익률 추이</h3>
+      {/* 리스크 사이클 및 빈도 분석 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="premium-card p-8 lg:col-span-2">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-8 flex items-center gap-2">
+            <Activity className="text-primary" size={16}/> 월별 수익 및 승률 상관관계
+          </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyReturns}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
+              <AreaChart data={monthlyReturns}>
+                <defs>
+                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="month" stroke="#94A3B8" fontSize={10} fontWeight="bold" />
+                <YAxis yAxisId="left" stroke="#94A3B8" fontSize={10} />
+                <YAxis yAxisId="right" orientation="right" stroke="#94A3B8" fontSize={10} />
                 <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   formatter={(value, name) => {
-                    if (name === 'profit') return [formatCurrency(value), '월 수익']
-                    if (name === 'winRate') return [formatPercentage(value), '승률']
+                    if (name === 'profit') return [formatCurrency(value), 'Profit']
+                    if (name === 'winRate') return [`${value}%`, 'Win Rate']
                     return [value, name]
                   }}
                 />
-                <Line 
+                <Area 
+                  yAxisId="left"
                   type="monotone" 
                   dataKey="profit" 
-                  stroke="#3a5ba0" 
-                  strokeWidth={2}
-                  name="월 수익"
-                  yAxisId="left"
+                  stroke={COLORS.primary} 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorProfit)"
+                  name="profit"
                 />
                 <Line 
-                  type="monotone" 
-                  dataKey="winRate" 
-                  stroke="#f7c873" 
-                  strokeWidth={2}
                   yAxisId="right"
-                  name="승률"
+                  type="stepAfter" 
+                  dataKey="winRate" 
+                  stroke={COLORS.warning} 
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: COLORS.warning, strokeWidth: 2, stroke: '#fff' }}
+                  name="winRate"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
-      )}
 
-      {/* 수익 분포 */}
-      {profitDistribution.ranges.length > 0 && (
-        <div className="metric-card p-6">
-          <h3 className="text-lg font-semibold mb-4">수익 분포</h3>
-          <div className="space-y-3">
-            {profitDistribution.ranges.map((range, index) => (
-              <div key={range.label} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium">{range.label}</span>
-                <div className="text-right">
-                  <div className="font-semibold">{range.count}회</div>
-                  <div className="text-sm text-gray-600">
-                    {((range.count / trades.length) * 100).toFixed(1)}%
-                  </div>
-                </div>
+        <div className="space-y-8">
+          <div className="premium-card p-6">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Execution Cycle</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-success/5 rounded-2xl p-4 border border-success/10 text-center">
+                <div className="text-2xl font-black text-success tracking-tighter">{maxWinStreak}</div>
+                <div className="text-[10px] font-bold text-success/70 uppercase">Max Win Streak</div>
               </div>
-            ))}
-          </div>
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <div className="text-sm font-medium text-blue-800">
-              수익 거래: {profitDistribution.stats.totalProfitTrades}회 
-              ({formatPercentage(profitDistribution.stats.profitTradeRatio)})
-            </div>
-            <div className="text-sm font-medium text-red-800">
-              손실 거래: {profitDistribution.stats.totalLossTrades}회 
-              ({formatPercentage(100 - profitDistribution.stats.profitTradeRatio)})
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 패턴별 성과 분석 */}
-      <div className="metric-card p-6">
-        <h3 className="text-lg font-semibold mb-4">패턴별 성과 분석</h3>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 성공 패턴 차트 */}
-          <div>
-            <h4 className="text-md font-medium mb-3 text-green-700 text-center">✅ 성공 패턴</h4>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={successPatternChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    fontSize={10}
-                  />
-                  <YAxis label={{ value: '횟수', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip 
-                    formatter={(value) => [value, '거래 횟수']}
-                    labelFormatter={(label) => `${label} (성공 패턴)`}
-                  />
-                  <Bar dataKey="count" fill="#22c55e" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="bg-danger/5 rounded-2xl p-4 border border-danger/10 text-center">
+                <div className="text-2xl font-black text-danger tracking-tighter">{maxLossStreak}</div>
+                <div className="text-[10px] font-bold text-danger/70 uppercase">Max Loss Streak</div>
+              </div>
             </div>
           </div>
 
-          {/* 실패 패턴 차트 */}
-          <div>
-            <h4 className="text-md font-medium mb-3 text-red-700 text-center">❌ 실패 패턴</h4>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={failurePatternChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    fontSize={10}
-                  />
-                  <YAxis label={{ value: '횟수', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip 
-                    formatter={(value) => [value, '거래 횟수']}
-                    labelFormatter={(label) => `${label} (실패 패턴)`}
-                  />
-                  <Bar dataKey="count" fill="#ef4444" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* 패턴 목록 */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* 성공 패턴 목록 */}
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h5 className="font-medium text-green-800 mb-2">성공 패턴 목록</h5>
-            <div className="text-sm text-green-700 space-y-1">
-              {TRADE_TAGS.success.map(tag => (
-                <div key={tag} className="flex justify-between">
-                  <span>{tag.replace(/_/g, ' ')}</span>
-                  <span className="font-medium">
-                    {tagStats[tag]?.count || 0}회
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 실패 패턴 목록 */}
-          <div className="bg-red-50 p-4 rounded-lg">
-            <h5 className="font-medium text-red-800 mb-2">실패 패턴 목록</h5>
-            <div className="text-sm text-red-700 space-y-1">
-              {TRADE_TAGS.failure.map(tag => (
-                <div key={tag} className="flex justify-between">
-                  <span>{tag.replace(/_/g, ' ')}</span>
-                  <span className="font-medium">
-                    {tagStats[tag]?.count || 0}회
-                  </span>
+          <div className="premium-card p-6">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Trading Frequency</h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Daily Average', value: `${tradingFreq.dailyAvg.toFixed(1)} 회` },
+                { label: 'Weekly Average', value: `${tradingFreq.weeklyAvg.toFixed(1)} 회` },
+                { label: 'Monthly Average', value: `${tradingFreq.monthlyAvg.toFixed(1)} 회` },
+              ].map((item, i) => (
+                <div key={i} className="flex justify-between items-center bg-slate-50 px-4 py-3 rounded-xl">
+                  <span className="text-xs font-bold text-slate-500">{item.label}</span>
+                  <span className="text-sm font-black text-slate-900">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -353,84 +271,122 @@ export const PatternAnalysis = ({ trades }) => {
         </div>
       </div>
 
+      {/* 인공지능 패턴 분석 리포트 */}
+      <div className="premium-card p-8 bg-slate-900 text-white border-none shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-10">
+          <BarChart3 size={200} />
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center space-x-2 text-primary-light mb-4">
+            <Lightbulb size={20} className="text-primary"/>
+            <h3 className="text-lg font-black tracking-tight text-primary">Strategic Insight Report</h3>
+          </div>
+          <p className="text-slate-400 text-sm mb-10 max-w-2xl">
+            귀하의 매매 데이터를 기반으로 산출된 고위험 및 고수익 패턴 분석 결과입니다. 
+            아래의 성공 공식을 강화하고 실패 트리거를 제거하십시오.
+          </p>
 
-      {/* 체크리스트 효과 분석 */}
-      <div className="metric-card p-6">
-        <h3 className="text-lg font-semibold mb-4">체크리스트 준수 효과</h3>
-        {checklistEffectData.length > 0 ? (
-          <div className="space-y-4">
-            {checklistEffectData.map((item) => (
-              <div key={item.name} className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">{item.name}</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="text-sm text-gray-600">체크 시 승률</div>
-                    <div className="text-lg font-semibold text-green-600">
-                      {formatPercentage(item.checkedWinRate)}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 size={16} className="text-success" />
+                <span className="text-xs font-black uppercase tracking-widest text-slate-300">Dominant Success Patterns</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {successPatternData.slice(0, 3).map((item, i) => (
+                  <div key={i} className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                    <span className="text-sm font-bold">{item.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-success bg-success/10 px-2 py-1 rounded">Rate: {item.winRate.toFixed(1)}%</span>
+                      <span className="text-xs text-slate-500 whitespace-nowrap">{item.count} hits</span>
                     </div>
-                    <div className="text-xs text-gray-500">{item.checkedCount}회</div>
                   </div>
-                  <div className="text-center p-3 bg-red-50 rounded-lg">
-                    <div className="text-sm text-gray-600">미체크 시 승률</div>
-                    <div className="text-lg font-semibold text-red-600">
-                      {formatPercentage(item.uncheckedWinRate)}
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle size={16} className="text-danger" />
+                <span className="text-xs font-black uppercase tracking-widest text-slate-300">Negative Correlation Triggers</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {failurePatternData.slice(0, 3).map((item, i) => (
+                  <div key={i} className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                    <span className="text-sm font-bold">{item.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-danger bg-danger/10 px-2 py-1 rounded">Rate: {item.winRate.toFixed(1)}%</span>
+                      <span className="text-xs text-slate-500 whitespace-nowrap">{item.count} hits</span>
                     </div>
-                    <div className="text-xs text-gray-500">{item.uncheckedCount}회</div>
                   </div>
-                </div>
-                <div className="mt-2 text-center">
-                  <span className={`text-sm font-medium ${
-                    item.checkedWinRate > item.uncheckedWinRate ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    차이: {formatPercentage(Math.abs(item.checkedWinRate - item.uncheckedWinRate))}
-                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 알고리즘 개선 알림 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="premium-card p-8">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-8 flex items-center gap-2">
+            <CheckCircle2 className="text-success" size={16}/> Checklist Performance Analysis
+          </h3>
+          <div className="space-y-6">
+            {checklistEffectData.slice(0, 3).map((item, i) => (
+              <div key={i} className="space-y-4 pb-6 border-b border-slate-100 last:border-none">
+                <h4 className="text-sm font-black text-slate-700">{item.name}</h4>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="absolute top-0 left-0 h-full bg-success transition-all duration-1000" style={{ width: `${item.checkedWinRate}%` }} />
+                    <div className="absolute -top-6 left-0 text-[10px] font-black text-success uppercase">Checked: {item.checkedWinRate.toFixed(1)}%</div>
+                  </div>
+                  <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="absolute top-0 left-0 h-full bg-danger transition-all duration-1000" style={{ width: `${item.uncheckedWinRate}%` }} />
+                     <div className="absolute -top-6 left-0 text-[10px] font-black text-danger uppercase">Unchecked: {item.uncheckedWinRate.toFixed(1)}%</div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">체크리스트 데이터가 없습니다</p>
-        )}
-      </div>
+        </div>
 
-      {/* 개선 제안 */}
-      <div className="metric-card p-6">
-        <h3 className="text-lg font-semibold mb-4">개선 제안</h3>
-        <div className="space-y-3">
-          {/* 가장 많이 사용된 성공 패턴 */}
-          {successPatternData.length > 0 && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h4 className="font-medium text-green-800 mb-2">✅ 성공 패턴 강화</h4>
-              <p className="text-green-700">
-                '{successPatternData[0]?.name}' 성공 패턴을 {successPatternData[0]?.count}회 사용했습니다. 
-                이 패턴을 더 자주 활용해보세요.
-              </p>
+        <div className="space-y-8">
+          <div className="premium-card p-8 border-l-4 border-l-primary">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Zap className="text-primary" size={16}/> Professional Recommendation
+            </h3>
+            <div className="space-y-4">
+               {successPatternData.length > 0 && (
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex-shrink-0 flex items-center justify-center text-primary">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-slate-900 mb-1">성공 패턴 집중 강화</div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      귀하의 트레이딩에서 <strong>'{successPatternData[0]?.name}'</strong> 패턴의 성공 확률이 매우 높습니다. 
+                      이 시그널이 발생할 때 포지션 사이징을 강화해 보세요.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {failurePatternData.length > 0 && (
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-danger/10 flex-shrink-0 flex items-center justify-center text-danger">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-slate-900 mb-1">위험 지표 필터링</div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      <strong>'{failurePatternData[0]?.name}'</strong> 상황에서는 승률이 현격히 낮아집니다. 
+                      해당 조건에서는 보수적인 관망을 추천드립니다.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* 가장 많이 사용된 실패 패턴 경고 */}
-          {failurePatternData.length > 0 && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="font-medium text-red-800 mb-2">⚠️ 실패 패턴 주의</h4>
-              <p className="text-red-700">
-                '{failurePatternData[0]?.name}' 실패 패턴이 {failurePatternData[0]?.count}회 발생했습니다. 
-                이 패턴을 피하도록 주의해보세요.
-              </p>
-            </div>
-          )}
-
-          {/* 체크리스트 개선 제안 */}
-          {checklistEffectData.length > 0 && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-2">📋 체크리스트 준수 강화</h4>
-              <p className="text-blue-700">
-                '{checklistEffectData[0]?.name}' 항목을 체크했을 때 승률이 
-                {formatPercentage(checklistEffectData[0]?.checkedWinRate - checklistEffectData[0]?.uncheckedWinRate)} 
-                더 높습니다. 거래 전 반드시 확인하세요.
-              </p>
-            </div>
-          )}
-
+          </div>
         </div>
       </div>
     </div>

@@ -1,68 +1,104 @@
 import { useState, useEffect } from 'react'
-import { getJournals, setJournals } from '@/utils/storage'
+import { getJournals, setJournals as setLocalJournals } from '@/utils/storage'
+import { getSupabaseClient } from '@/services/supabase'
+import { getAuth } from '@/utils/storage'
 
 export const useJournals = () => {
   const [journals, setJournalsState] = useState([])
+  const [loading, setLoading] = useState(true)
+  const auth = getAuth()
+  const isLoggedIn = auth?.isLoggedIn && auth?.authType === 'supabase'
 
   useEffect(() => {
-    const savedJournals = getJournals()
-    if (savedJournals.length === 0) {
-      // 샘플 데이터
-      const sampleJournals = [
-        {
-          id: 1,
-          date: '2024-01-15',
-          content: '오늘 비트코인 매매에서 좋은 결과를 얻었다. 사전에 계획한 대로 손절선을 설정하고 인내심을 가지고 기다린 결과였다.',
-          mood: 'good'
-        },
-        {
-          id: 2,
-          date: '2024-01-16',
-          content: '감정적으로 거래해서 손실을 봤다. 다음에는 반드시 계획을 세우고 거래해야겠다.',
-          mood: 'bad'
+    const fetchJournals = async () => {
+      setLoading(true)
+      if (isLoggedIn) {
+        try {
+          const supabase = getSupabaseClient()
+          const { data, error } = await supabase
+            .from('journals')
+            .select('*')
+            .order('date', { ascending: false })
+          if (error) throw error
+          setJournalsState(data || [])
+        } catch (error) {
+          console.error('Error fetching journals from Supabase:', error)
+          setJournalsState(getJournals())
         }
-      ]
-      setJournalsState(sampleJournals)
-      setJournals(sampleJournals)
+      } else {
+        setJournalsState(getJournals())
+      }
+      setLoading(false)
+    }
+
+    fetchJournals()
+  }, [isLoggedIn])
+
+  const addJournal = async (journal) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { data, error } = await supabase
+          .from('journals')
+          .insert([{ ...journal, user_id: auth.user.id }])
+          .select()
+        if (error) throw error
+        setJournalsState([data[0], ...journals])
+      } catch (error) {
+        console.error('Error adding journal to Supabase:', error)
+      }
     } else {
-      setJournalsState(savedJournals)
+      const updatedJournals = [{ ...journal, id: Date.now() }, ...journals]
+      setJournalsState(updatedJournals)
+      setLocalJournals(updatedJournals)
     }
-  }, [])
+  }
 
-  const addJournal = (journal) => {
-    const newJournal = {
-      ...journal,
-      id: Date.now()
+  const updateJournal = async (id, updatedJournal) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { error } = await supabase
+          .from('journals')
+          .update(updatedJournal)
+          .eq('id', id)
+        if (error) throw error
+        setJournalsState(journals.map(j => j.id === id ? { ...j, ...updatedJournal } : j))
+      } catch (error) {
+        console.error('Error updating journal in Supabase:', error)
+      }
+    } else {
+      const updatedJournals = journals.map(j => j.id === id ? { ...j, ...updatedJournal } : j)
+      setJournalsState(updatedJournals)
+      setLocalJournals(updatedJournals)
     }
-    const updatedJournals = [...journals, newJournal]
-    setJournalsState(updatedJournals)
-    setJournals(updatedJournals)
   }
 
-  const updateJournal = (id, updatedJournal) => {
-    const updatedJournals = journals.map(journal => 
-      journal.id === id ? { ...journal, ...updatedJournal } : journal
-    )
-    setJournalsState(updatedJournals)
-    setJournals(updatedJournals)
-  }
-
-  const deleteJournal = (id) => {
-    const updatedJournals = journals.filter(journal => journal.id !== id)
-    setJournalsState(updatedJournals)
-    setJournals(updatedJournals)
-  }
-
-  const clearAllJournals = () => {
-    setJournalsState([])
-    setJournals([])
+  const deleteJournal = async (id) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { error } = await supabase
+          .from('journals')
+          .delete()
+          .eq('id', id)
+        if (error) throw error
+        setJournalsState(journals.filter(j => j.id !== id))
+      } catch (error) {
+        console.error('Error deleting journal from Supabase:', error)
+      }
+    } else {
+      const updatedJournals = journals.filter(j => j.id !== id)
+      setJournalsState(updatedJournals)
+      setLocalJournals(updatedJournals)
+    }
   }
 
   return {
     journals,
+    loading,
     addJournal,
     updateJournal,
-    deleteJournal,
-    clearAllJournals
+    deleteJournal
   }
 }

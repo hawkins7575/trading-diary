@@ -1,49 +1,66 @@
 import { formatCurrency } from '@/utils/calculations'
+import { ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react'
 
 export const RecentTrades = ({ trades }) => {
   if (trades.length === 0) {
     return (
-      <div className="metric-card p-6">
-        <h3 className="text-lg font-semibold mb-4">최근 거래</h3>
-        <div className="text-center py-8 text-gray-500">
-          아직 거래 내역이 없습니다
+      <div className="premium-card">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <MoreHorizontal className="text-slate-300" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800">기록된 데이터가 없습니다</h3>
+          <p className="text-xs text-slate-600 mt-1 font-bold">새로운 거래 내역을 추가하여 분석을 시작하세요.</p>
         </div>
       </div>
     )
   }
 
-  const recentTrades = trades.slice(-5).reverse()
+  const recentTrades = trades.slice(-10).reverse()
 
   return (
-    <div className="metric-card p-6">
-      <h3 className="text-lg font-semibold mb-4">최근 거래</h3>
-      
+    <div className="data-table-container">
       {/* 데스크톱 테이블 */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
+        <table className="data-table">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-medium text-gray-600">날짜</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">입금</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">출금</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">손익</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">잔고</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">메모</th>
+            <tr>
+              <th>진행 일자</th>
+              <th>입금액 (IN)</th>
+              <th>출금액 (OUT)</th>
+              <th>거래 손익 (P/L)</th>
+              <th>계정 잔고</th>
+              <th className="text-right">데이터 비고</th>
             </tr>
           </thead>
           <tbody>
             {recentTrades.map(trade => {
-              const profit = parseFloat(trade.withdrawal || 0) - parseFloat(trade.entry || 0)
+              const entry = parseFloat(trade.entry || 0)
+              const withdrawal = parseFloat(trade.withdrawal || 0)
+              const profit = withdrawal - entry
+              const isProfit = profit > 0
+              const isLoss = profit < 0
+              
               return (
-                <tr key={trade.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">{trade.date}</td>
-                  <td className="py-3 px-4">{formatCurrency(parseFloat(trade.entry) || 0)}</td>
-                  <td className="py-3 px-4">{formatCurrency(parseFloat(trade.withdrawal) || 0)}</td>
-                  <td className={`py-3 px-4 font-medium ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(profit)}
+                <tr key={trade.id}>
+                  <td className="font-bold text-slate-900">{trade.date}</td>
+                  <td className="text-slate-800 font-bold">{formatCurrency(entry)}</td>
+                  <td className="text-slate-800 font-bold">{formatCurrency(withdrawal)}</td>
+                  <td>
+                    <div className={`inline-flex items-center space-x-1 font-black ${
+                      isProfit ? 'text-success' : isLoss ? 'text-danger' : 'text-slate-600'
+                    }`}>
+                      {isProfit && <ArrowUpRight size={14} />}
+                      {isLoss && <ArrowDownRight size={14} />}
+                      <span>{formatCurrency(profit)}</span>
+                    </div>
                   </td>
-                  <td className="py-3 px-4 font-medium">{formatCurrency(parseFloat(trade.balance) || 0)}</td>
-                  <td className="py-3 px-4 text-gray-600 max-w-xs truncate">{trade.memo}</td>
+                  <td className="font-black text-slate-900">{formatCurrency(parseFloat(trade.balance) || 0)}</td>
+                  <td className="text-right">
+                    <span className="text-xs text-slate-700 font-bold italic bg-slate-50 px-2 py-1 rounded max-w-[150px] truncate inline-block">
+                      {trade.memo || 'N/A'}
+                    </span>
+                  </td>
                 </tr>
               )
             })}
@@ -52,53 +69,39 @@ export const RecentTrades = ({ trades }) => {
       </div>
 
       {/* 모바일 카드 형태 */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden divide-y divide-slate-100">
         {recentTrades.map(trade => {
-          const profit = parseFloat(trade.withdrawal || 0) - parseFloat(trade.entry || 0)
+          const entry = parseFloat(trade.entry || 0)
+          const withdrawal = parseFloat(trade.withdrawal || 0)
+          const profit = withdrawal - entry
           return (
-            <div key={trade.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              {/* 상단: 날짜와 손익 */}
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-sm font-medium text-gray-900">{trade.date}</div>
-                <div className={`text-sm font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {profit !== 0 ? formatCurrency(profit) : '0원'}
+            <div key={trade.id} className="p-5 hover:bg-slate-50 transition-colors">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">DATA POINT</div>
+                  <div className="text-sm font-black text-slate-900">{trade.date}</div>
+                </div>
+                <div className={`px-2 py-1 rounded text-[10px] font-black ${
+                  profit > 0 ? 'bg-success/10 text-success' : profit < 0 ? 'bg-danger/10 text-danger' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {profit > 0 ? '+' : ''}{formatCurrency(profit)}
                 </div>
               </div>
               
-              {/* 중간: 입금/출금 */}
-              <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="grid grid-cols-2 gap-6 mb-4">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">입금</div>
-                  <div className="text-sm font-medium">
-                    {trade.entry ? formatCurrency(parseFloat(trade.entry)) : '-'}
-                  </div>
+                  <div className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">ENTRY</div>
+                  <div className="text-xs font-bold text-slate-700">{formatCurrency(entry)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">출금</div>
-                  <div className="text-sm font-medium">
-                    {trade.withdrawal ? formatCurrency(parseFloat(trade.withdrawal)) : '-'}
-                  </div>
+                  <div className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">EXIT</div>
+                  <div className="text-xs font-bold text-slate-700">{formatCurrency(withdrawal)}</div>
                 </div>
               </div>
               
-              {/* 하단: 잔고와 메모 */}
-              <div className="border-t border-gray-200 pt-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">현재 잔고</div>
-                    <div className="text-sm font-bold text-primary">
-                      {formatCurrency(parseFloat(trade.balance) || 0)}
-                    </div>
-                  </div>
-                  {trade.memo && (
-                    <div className="ml-4 text-right flex-1">
-                      <div className="text-xs text-gray-500 mb-1">메모</div>
-                      <div className="text-sm text-gray-700 break-words">
-                        {trade.memo.length > 20 ? `${trade.memo.slice(0, 20)}...` : trade.memo}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="bg-slate-50/80 rounded-xl p-3 flex justify-between items-center border border-slate-100">
+                <span className="text-[10px] font-black text-slate-700">FINAL BALANCE</span>
+                <span className="text-sm font-black text-primary">{formatCurrency(parseFloat(trade.balance) || 0)}</span>
               </div>
             </div>
           )

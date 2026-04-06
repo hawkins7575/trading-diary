@@ -76,7 +76,7 @@ export const GoalForm = ({
           {/* 목표 설정 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="form-label">목표 수익 금액 (원)</label>
+              <label className="form-label">목표 수익 금액 ($)</label>
               <input
                 type="number"
                 value={formData.targetAmount}

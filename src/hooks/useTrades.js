@@ -1,92 +1,132 @@
 import { useState, useEffect } from 'react'
-import { getTrades, setTrades } from '@/utils/storage'
+import { getTrades, setTrades as setLocalTrades } from '@/utils/storage'
 import { calculateProfit } from '@/utils/calculations'
+import { getSupabaseClient } from '@/services/supabase'
+import { getAuth } from '@/utils/storage'
 
 export const useTrades = () => {
   const [trades, setTradesState] = useState([])
+  const [loading, setLoading] = useState(true)
+  const auth = getAuth()
+  const isLoggedIn = auth?.isLoggedIn && auth?.authType === 'supabase'
 
   useEffect(() => {
-    const savedTrades = getTrades()
-    if (savedTrades.length === 0) {
-      // 샘플 데이터
-      const sampleTrades = [
-        {
-          id: 1,
-          date: '2024-01-15',
-          entry: '100000',
-          withdrawal: '110000',
-          balance: '1110000',
-          memo: '비트코인 단기 매매',
-          tags: ['계획대로_실행', '적절한_익절'],
-          checklist: {
-            '손절선_설정': true,
-            '포지션_사이즈': true,
-            '시장_분석': true,
-            '감정_상태': true
-          },
-          emotion: '확신',
-          confidence: 8
-        },
-        {
-          id: 2,
-          date: '2024-01-16',
-          entry: '50000',
-          withdrawal: '45000',
-          balance: '1105000',
-          memo: '이더리움 손절',
-          tags: ['손절_늦음', '감정_거래'],
-          checklist: {
-            '손절선_설정': false,
-            '감정_상태': false
-          },
-          emotion: '불안',
-          confidence: 4
+    const fetchTrades = async () => {
+      setLoading(true)
+      
+      if (isLoggedIn) {
+        try {
+          const supabase = getSupabaseClient()
+          const { data, error } = await supabase
+            .from('trades')
+            .select('*')
+            .order('date', { ascending: true })
+          
+          if (error) throw error
+          setTradesState(data || [])
+        } catch (error) {
+          console.error('Error fetching trades from Supabase:', error)
+          // Fallback to local if Supabase fails
+          setTradesState(getTrades())
         }
-      ]
-      setTradesState(sampleTrades)
-      setTrades(sampleTrades)
-    } else {
-      setTradesState(savedTrades)
+      } else {
+        const savedTrades = getTrades()
+        if (savedTrades.length === 0 && !localStorage.getItem('trading-diary-initialized')) {
+          // 샘플 데이터
+          const sampleTrades = [
+            { id: 1, date: '2024-01-15', entry: 50000, withdrawal: 55000, balance: 105000, profit: 5000, memo: 'Demo Win', tags: ['계획대로_실행'], emotion: '확신' },
+            { id: 2, date: '2024-01-16', entry: 20000, withdrawal: 18000, balance: 103000, profit: -2000, memo: 'Demo Loss', tags: ['손절_늦음'], emotion: '불안' }
+          ]
+          setTradesState(sampleTrades)
+          setLocalTrades(sampleTrades)
+          localStorage.setItem('trading-diary-initialized', 'true')
+        } else {
+          setTradesState(savedTrades)
+        }
+      }
+      setLoading(false)
     }
-  }, [])
 
-  const addTrade = (trade) => {
+    fetchTrades()
+  }, [isLoggedIn])
+
+  const addTrade = async (trade) => {
+    const profit = calculateProfit(trade.entry, trade.withdrawal)
     const newTrade = {
       ...trade,
-      id: Date.now(),
-      profit: calculateProfit(trade.entry, trade.withdrawal)
+      profit
     }
-    const updatedTrades = [...trades, newTrade]
-    setTradesState(updatedTrades)
-    setTrades(updatedTrades)
+
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { data, error } = await supabase
+          .from('trades')
+          .insert([{ ...newTrade, user_id: auth.user.id }])
+          .select()
+        
+        if (error) throw error
+        setTradesState([...trades, data[0]])
+      } catch (error) {
+        console.error('Error adding trade to Supabase:', error)
+      }
+    } else {
+      const updatedTrades = [...trades, { ...newTrade, id: Date.now() }]
+      setTradesState(updatedTrades)
+      setLocalTrades(updatedTrades)
+    }
   }
 
-  const updateTrade = (id, updatedTrade) => {
-    const updatedTrades = trades.map(trade => 
-      trade.id === id 
-        ? { ...updatedTrade, profit: calculateProfit(updatedTrade.entry, updatedTrade.withdrawal) }
-        : trade
-    )
-    setTradesState(updatedTrades)
-    setTrades(updatedTrades)
+  const updateTrade = async (id, updatedTrade) => {
+    const profit = calculateProfit(updatedTrade.entry, updatedTrade.withdrawal)
+    const finalUpdate = { ...updatedTrade, profit }
+
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { error } = await supabase
+          .from('trades')
+          .update(finalUpdate)
+          .eq('id', id)
+        
+        if (error) throw error
+        setTradesState(trades.map(t => t.id === id ? { ...t, ...finalUpdate } : t))
+      } catch (error) {
+        console.error('Error updating trade in Supabase:', error)
+      }
+    } else {
+      const updatedTrades = trades.map(t => t.id === id ? { ...t, ...finalUpdate } : t)
+      setTradesState(updatedTrades)
+      setLocalTrades(updatedTrades)
+    }
   }
 
-  const deleteTrade = (id) => {
-    const updatedTrades = trades.filter(trade => trade.id !== id)
-    setTradesState(updatedTrades)
-    setTrades(updatedTrades)
-  }
-
-  const clearAllTrades = () => {
-    setTradesState([])
-    setTrades([])
+  const deleteTrade = async (id) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { error } = await supabase
+          .from('trades')
+          .delete()
+          .eq('id', id)
+        
+        if (error) throw error
+        setTradesState(trades.filter(t => t.id !== id))
+      } catch (error) {
+        console.error('Error deleting trade from Supabase:', error)
+      }
+    } else {
+      const updatedTrades = trades.filter(t => t.id !== id)
+      setTradesState(updatedTrades)
+      setLocalTrades(updatedTrades)
+    }
   }
 
   return {
     trades,
+    loading,
     addTrade,
     updateTrade,
-    deleteTrade,
-    clearAllTrades
+    deleteTrade
   }
 }

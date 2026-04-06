@@ -1,80 +1,103 @@
 import { useState, useEffect } from 'react'
-import { getGoals, setGoals } from '@/utils/storage'
+import { getGoals, setGoals as setLocalGoals } from '@/utils/storage'
+import { getSupabaseClient } from '@/services/supabase'
+import { getAuth } from '@/utils/storage'
 
 export const useGoals = () => {
   const [goals, setGoalsState] = useState([])
+  const [loading, setLoading] = useState(true)
+  const auth = getAuth()
+  const isLoggedIn = auth?.isLoggedIn && auth?.authType === 'supabase'
 
   useEffect(() => {
-    const savedGoals = getGoals()
-    if (savedGoals.length === 0) {
-      // 샘플 데이터
-      const sampleGoals = [
-        {
-          id: 1,
-          title: '월 수익률 5% 달성',
-          targetAmount: 50000,
-          targetWinRate: 70,
-          deadline: '2024-02-29',
-          description: '안정적인 월 5% 수익률을 목표로 합니다.',
-          isCompleted: false,
-          progress: 0
+    const fetchGoals = async () => {
+      setLoading(true)
+      if (isLoggedIn) {
+        try {
+          const supabase = getSupabaseClient()
+          const { data, error } = await supabase
+            .from('goals')
+            .select('*')
+          if (error) throw error
+          setGoalsState(data || [])
+        } catch (error) {
+          console.error('Error fetching goals from Supabase:', error)
+          setGoalsState(getGoals())
         }
-      ]
-      setGoalsState(sampleGoals)
-      setGoals(sampleGoals)
+      } else {
+        setGoalsState(getGoals())
+      }
+      setLoading(false)
+    }
+
+    fetchGoals()
+  }, [isLoggedIn])
+
+  const addGoal = async (goal) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { data, error } = await supabase
+          .from('goals')
+          .insert([{ ...goal, user_id: auth.user.id }])
+          .select()
+        if (error) throw error
+        setGoalsState([...goals, data[0]])
+      } catch (error) {
+        console.error('Error adding goal to Supabase:', error)
+      }
     } else {
-      setGoalsState(savedGoals)
+      const updatedGoals = [...goals, { ...goal, id: Date.now() }]
+      setGoalsState(updatedGoals)
+      setLocalGoals(updatedGoals)
     }
-  }, [])
+  }
 
-  const addGoal = (goal) => {
-    const newGoal = {
-      ...goal,
-      id: Date.now(),
-      isCompleted: false,
-      progress: 0,
-      createdAt: new Date().toISOString()
+  const updateGoal = async (id, updatedGoal) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { error } = await supabase
+          .from('goals')
+          .update(updatedGoal)
+          .eq('id', id)
+        if (error) throw error
+        setGoalsState(goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g))
+      } catch (error) {
+        console.error('Error updating goal in Supabase:', error)
+      }
+    } else {
+      const updatedGoals = goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g)
+      setGoalsState(updatedGoals)
+      setLocalGoals(updatedGoals)
     }
-    const updatedGoals = [...goals, newGoal]
-    setGoalsState(updatedGoals)
-    setGoals(updatedGoals)
   }
 
-  const updateGoal = (id, updatedGoal) => {
-    const updatedGoals = goals.map(goal => 
-      goal.id === id ? { ...goal, ...updatedGoal } : goal
-    )
-    setGoalsState(updatedGoals)
-    setGoals(updatedGoals)
-  }
-
-  const deleteGoal = (id) => {
-    const updatedGoals = goals.filter(goal => goal.id !== id)
-    setGoalsState(updatedGoals)
-    setGoals(updatedGoals)
-  }
-
-  const toggleGoalComplete = (id) => {
-    const updatedGoals = goals.map(goal =>
-      goal.id === id 
-        ? { ...goal, isCompleted: !goal.isCompleted, progress: goal.isCompleted ? 0 : 100 }
-        : goal
-    )
-    setGoalsState(updatedGoals)
-    setGoals(updatedGoals)
-  }
-
-  const clearAllGoals = () => {
-    setGoalsState([])
-    setGoals([])
+  const deleteGoal = async (id) => {
+    if (isLoggedIn) {
+      try {
+        const supabase = getSupabaseClient()
+        const { error } = await supabase
+          .from('goals')
+          .delete()
+          .eq('id', id)
+        if (error) throw error
+        setGoalsState(goals.filter(g => g.id !== id))
+      } catch (error) {
+        console.error('Error deleting goal from Supabase:', error)
+      }
+    } else {
+      const updatedGoals = goals.filter(g => g.id !== id)
+      setGoalsState(updatedGoals)
+      setLocalGoals(updatedGoals)
+    }
   }
 
   return {
     goals,
+    loading,
     addGoal,
     updateGoal,
-    deleteGoal,
-    toggleGoalComplete,
-    clearAllGoals
+    deleteGoal
   }
 }
