@@ -42,6 +42,13 @@ export const useGoals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedGoals = [...goals, { ...goal, id: Date.now() }]
+          setGoalsState(updatedGoals)
+          setLocalGoals(updatedGoals)
+          return
+        }
         
         // 데이터 정제
         const sanitizedGoal = {
@@ -76,6 +83,13 @@ export const useGoals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedGoals = goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g)
+          setGoalsState(updatedGoals)
+          setLocalGoals(updatedGoals)
+          return
+        }
         const { error } = await supabase
           .from('goals')
           .update(updatedGoal)
@@ -96,6 +110,13 @@ export const useGoals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedGoals = goals.filter(g => g.id !== id)
+          setGoalsState(updatedGoals)
+          setLocalGoals(updatedGoals)
+          return
+        }
         const { error } = await supabase
           .from('goals')
           .delete()

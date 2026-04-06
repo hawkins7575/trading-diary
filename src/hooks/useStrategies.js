@@ -42,6 +42,13 @@ export const useStrategies = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedStrategies = [...strategies, { ...strategy, id: Date.now() }]
+          setStrategiesState(updatedStrategies)
+          setLocalStrategies(updatedStrategies)
+          return
+        }
         
         const sanitizedStrategy = {
           ...strategy,
@@ -73,6 +80,13 @@ export const useStrategies = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedStrategies = strategies.map(s => s.id === id ? { ...s, ...updatedStrategy } : s)
+          setStrategiesState(updatedStrategies)
+          setLocalStrategies(updatedStrategies)
+          return
+        }
         const { error } = await supabase
           .from('strategies')
           .update(updatedStrategy)
@@ -93,6 +107,13 @@ export const useStrategies = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          const updatedStrategies = strategies.filter(s => s.id !== id)
+          setStrategiesState(updatedStrategies)
+          setLocalStrategies(updatedStrategies)
+          return
+        }
         const { error } = await supabase
           .from('strategies')
           .delete()

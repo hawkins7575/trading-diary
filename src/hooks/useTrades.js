@@ -66,6 +66,11 @@ export const useTrades = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          updateTradesAndState([...trades, { ...trade, id: Date.now() }])
+          return
+        }
         
         // 데이터 정제: 빈 문자열을 숫자 0으로 변환하고 불필요한 필드 제거
         const sanitizedTrade = {
@@ -101,6 +106,11 @@ export const useTrades = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          updateTradesAndState(trades.map(t => t.id === id ? { ...t, ...updatedTrade } : t))
+          return
+        }
         
         // 데이터 정제
         const sanitized = { ...updatedTrade }
@@ -128,6 +138,11 @@ export const useTrades = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        if (!supabase) {
+          console.warn('Supabase client not initialized, performing local operation')
+          updateTradesAndState(trades.filter(t => t.id !== id))
+          return
+        }
         const { error } = await supabase
           .from('trades')
           .delete()
