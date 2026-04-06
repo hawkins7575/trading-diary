@@ -37,9 +37,23 @@ export const useGoals = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        
+        // 데이터 정제
+        const sanitizedGoal = {
+          ...goal,
+          user_id: auth.user.id,
+          targetAmount: parseFloat(goal.targetAmount) || 0,
+          targetWinRate: parseFloat(goal.targetWinRate) || 0
+        }
+
+        // 로컬 ID 제거
+        if (sanitizedGoal.id && typeof sanitizedGoal.id === 'number') {
+          delete sanitizedGoal.id
+        }
+
         const { data, error } = await supabase
           .from('goals')
-          .insert([{ ...goal, user_id: auth.user.id }])
+          .insert([sanitizedGoal])
           .select()
         if (error) throw error
         setGoalsState([...goals, data[0]])

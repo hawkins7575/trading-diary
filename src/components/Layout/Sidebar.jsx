@@ -15,7 +15,7 @@ import { TABS } from '@/constants'
 
 const sidebarItems = [
   { id: TABS.DASHBOARD, label: '통합 대시보드', icon: LayoutDashboard },
-  { id: 'trades', label: '거래 히스토리', icon: History },
+  { id: TABS.TRADES, label: '거래 히스토리', icon: History },
   { id: TABS.JOURNAL, label: '매매일지', icon: BookOpen },
   { id: TABS.ANALYTICS, label: '데이터 분석', icon: TrendingUp },
   { id: TABS.STRATEGIES, label: '매매 전략', icon: ShieldCheck },

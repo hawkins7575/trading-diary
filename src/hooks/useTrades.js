@@ -60,9 +60,25 @@ export const useTrades = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        
+        // 데이터 정제: 빈 문자열을 숫자 0으로 변환하고 불필요한 필드 제거
+        const sanitizedTrade = {
+          ...trade,
+          user_id: auth.user.id,
+          seed: parseFloat(trade.seed) || 0,
+          entry: parseFloat(trade.entry) || 0,
+          withdrawal: parseFloat(trade.withdrawal) || 0,
+          balance: parseFloat(trade.balance) || 0,
+        }
+        
+        // 로컬 ID가 있다면 제거 (Supabase가 자동 생성하도록 함)
+        if (sanitizedTrade.id && typeof sanitizedTrade.id === 'number') {
+          delete sanitizedTrade.id
+        }
+
         const { data, error } = await supabase
           .from('trades')
-          .insert([{ ...trade, user_id: auth.user.id }])
+          .insert([sanitizedTrade])
           .select()
         
         if (error) throw error
@@ -79,9 +95,17 @@ export const useTrades = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        
+        // 데이터 정제
+        const sanitized = { ...updatedTrade }
+        if (sanitized.seed !== undefined) sanitized.seed = parseFloat(sanitized.seed) || 0
+        if (sanitized.entry !== undefined) sanitized.entry = parseFloat(sanitized.entry) || 0
+        if (sanitized.withdrawal !== undefined) sanitized.withdrawal = parseFloat(sanitized.withdrawal) || 0
+        if (sanitized.balance !== undefined) sanitized.balance = parseFloat(sanitized.balance) || 0
+
         const { error } = await supabase
           .from('trades')
-          .update(updatedTrade)
+          .update(sanitized)
           .eq('id', id)
         
         if (error) throw error

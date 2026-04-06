@@ -33,6 +33,7 @@ export const TRADE_CHECKLIST = {
 
 export const TABS = {
   DASHBOARD: 'dashboard',
+  TRADES: 'trades',
   JOURNAL: 'journal',
   STRATEGIES: 'strategies',
   GOALS: 'goals',

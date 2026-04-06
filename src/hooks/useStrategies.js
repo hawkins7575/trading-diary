@@ -37,9 +37,20 @@ export const useStrategies = () => {
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
+        
+        const sanitizedStrategy = {
+          ...strategy,
+          user_id: auth.user.id
+        }
+
+        // 로컬 ID 제거
+        if (sanitizedStrategy.id && typeof sanitizedStrategy.id === 'number') {
+          delete sanitizedStrategy.id
+        }
+
         const { data, error } = await supabase
           .from('strategies')
-          .insert([{ ...strategy, user_id: auth.user.id }])
+          .insert([sanitizedStrategy])
           .select()
         if (error) throw error
         setStrategiesState([...strategies, data[0]])
