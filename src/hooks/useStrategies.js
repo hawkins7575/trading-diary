@@ -15,6 +15,11 @@ export const useStrategies = () => {
       if (isLoggedIn) {
         try {
           const supabase = getSupabaseClient()
+          if (!supabase) {
+            setStrategiesState(getStrategies())
+            setLoading(false)
+            return
+          }
           const { data, error } = await supabase
             .from('strategies')
             .select('*')

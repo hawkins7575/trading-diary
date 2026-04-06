@@ -15,6 +15,11 @@ export const useGoals = () => {
       if (isLoggedIn) {
         try {
           const supabase = getSupabaseClient()
+          if (!supabase) {
+            setGoalsState(getGoals())
+            setLoading(false)
+            return
+          }
           const { data, error } = await supabase
             .from('goals')
             .select('*')

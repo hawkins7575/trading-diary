@@ -24,6 +24,12 @@ export const useTrades = () => {
       if (isLoggedIn) {
         try {
           const supabase = getSupabaseClient()
+          if (!supabase) {
+            updateTradesAndState(getTrades())
+            setLoading(false)
+            return
+          }
+
           const { data, error } = await supabase
             .from('trades')
             .select('*')
