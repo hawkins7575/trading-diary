@@ -103,37 +103,37 @@ function App() {
       alertModal.alert({
         title: '로그아웃 완료',
         message: '성공적으로 로그아웃되었습니다.',
-        type: 'success'
+        type: 'info'
       })
     }
   }
 
-  const handleReset = async () => {
+  const handleBackToMain = () => {
+    setCurrentPage('main')
+    window.scrollTo(0, 0)
+  }
+
+  const handleNavigate = (page) => {
+    setCurrentPage(page)
+    window.scrollTo(0, 0)
+  }
+
+  const handleClearAllData = async () => {
     const confirmed = await confirmModal.confirm({
-      title: '데이터 초기화',
-      message: '모든 데이터가 삭제되고 초기 상태로 돌아갑니다. 정말 초기화하시겠습니까?',
-      confirmText: '초기화',
+      title: '데이터 전체 초기화',
+      message: '정말 모든 거래 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      confirmText: '초기화 실행',
       cancelText: '취소'
     })
 
     if (confirmed) {
-      localStorage.clear()
-      localStorage.setItem('trading-diary-initialized', 'true')
-      window.location.reload()
+      clearAllTrades()
+      alertModal.alert({
+        title: '초기화 완료',
+        message: '모든 데이터가 성공적으로 초기화되었습니다.',
+        type: 'info'
+      })
     }
-  }
-
-  const handleClearAllData = () => {
-    clearAllTrades()
-    // Add other clear functions when implemented
-  }
-
-  const handleNavigateToLegal = (page) => {
-    setCurrentPage(page)
-  }
-
-  const handleBackToMain = () => {
-    setCurrentPage('main')
   }
 
   const renderTabContent = () => {
@@ -141,12 +141,16 @@ function App() {
       case TABS.DASHBOARD:
         return <Dashboard trades={trades} />
       
-      case 'trades':
+      case TABS.TRADES:
+        const sortedTrades = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))
+        const latestSeed = sortedTrades.length > 0 ? sortedTrades[0].seed : 0
+
         return (
           <TradeList 
-            trades={trades}
-            onAddTrade={addTrade}
-            onUpdateTrade={updateTrade}
+            trades={trades} 
+            latestSeed={latestSeed}
+            onAddTrade={addTrade} 
+            onUpdateTrade={updateTrade} 
             onDeleteTrade={deleteTrade}
             onClearAll={handleClearAllData}
           />
@@ -248,26 +252,22 @@ function App() {
       )}
       
       <div className="flex-1 flex flex-col">
-        {currentPage === 'main' && (
-          <Header 
-            user={user}
-            isLoggedIn={isLoggedIn}
-            onLogin={handleLogin}
-            onLogout={handleLogout}
-            onNavigate={handleNavigateToLegal}
-            onReset={handleReset}
-          />
-        )}
+        <Header 
+          user={user}
+          isLoggedIn={isLoggedIn}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onNavigate={handleNavigate}
+          onReset={handleClearAllData}
+        />
         
-        <main className="flex-1 overflow-auto p-4 md:p-8 lg:p-10">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             {renderPageContent()}
           </div>
         </main>
-
-        {currentPage === 'main' && (
-          <Footer onNavigate={handleNavigateToLegal} />
-        )}
+        
+        <Footer onNavigate={handleNavigate} />
       </div>
 
       {/* Login Modal */}
