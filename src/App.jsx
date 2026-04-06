@@ -108,6 +108,21 @@ function App() {
     }
   }
 
+  const handleReset = async () => {
+    const confirmed = await confirmModal.confirm({
+      title: '데이터 초기화',
+      message: '모든 데이터가 삭제되고 초기 상태로 돌아갑니다. 정말 초기화하시겠습니까?',
+      confirmText: '초기화',
+      cancelText: '취소'
+    })
+
+    if (confirmed) {
+      localStorage.clear()
+      localStorage.setItem('trading-diary-initialized', 'true')
+      window.location.reload()
+    }
+  }
+
   const handleClearAllData = () => {
     clearAllTrades()
     // Add other clear functions when implemented
@@ -240,6 +255,7 @@ function App() {
             onLogin={handleLogin}
             onLogout={handleLogout}
             onNavigate={handleNavigateToLegal}
+            onReset={handleReset}
           />
         )}
         

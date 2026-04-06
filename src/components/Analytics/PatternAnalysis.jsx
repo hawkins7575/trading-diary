@@ -254,18 +254,35 @@ export const PatternAnalysis = ({ trades }) => {
           </div>
 
           <div className="premium-card p-6">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Trading Frequency</h3>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Yield Factor Architecture</h3>
             <div className="space-y-4">
-              {[
-                { label: 'Daily Average', value: `${tradingFreq.dailyAvg.toFixed(1)} 회` },
-                { label: 'Weekly Average', value: `${tradingFreq.weeklyAvg.toFixed(1)} 회` },
-                { label: 'Monthly Average', value: `${tradingFreq.monthlyAvg.toFixed(1)} 회` },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center bg-slate-50 px-4 py-3 rounded-xl">
-                  <span className="text-xs font-bold text-slate-500">{item.label}</span>
-                  <span className="text-sm font-black text-slate-900">{item.value}</span>
-                </div>
-              ))}
+              {(() => {
+                const gains = trades.filter(t => (t.profit || 0) > 0).map(t => t.profit)
+                const losses = trades.filter(t => (t.profit || 0) < 0).map(t => Math.abs(t.profit))
+                const totalGains = gains.reduce((sum, g) => sum + g, 0)
+                const totalLosses = losses.reduce((sum, l) => sum + l, 0)
+                const avgWin = gains.length > 0 ? totalGains / gains.length : 0
+                const avgLoss = losses.length > 0 ? totalLosses / losses.length : 0
+                const profitFactor = totalLosses > 0 ? totalGains / totalLosses : (totalGains > 0 ? 100 : 0)
+                const rrRatio = avgLoss > 0 ? avgWin / avgLoss : 0
+                const breakEvenWinRate = rrRatio > 0 ? (1 / (1 + rrRatio)) * 100 : 0
+
+                const metrics = [
+                  { label: 'Profit Factor', value: profitFactor.toFixed(2), detail: '익절액 / 손절액', color: profitFactor >= 2.0 ? 'text-success' : profitFactor >= 1.0 ? 'text-primary' : 'text-danger' },
+                  { label: 'Reward/Risk Ratio', value: `1:${rrRatio.toFixed(2)}`, detail: '평균 수익 / 평균 손실' },
+                  { label: 'B.E Win Rate', value: `${breakEvenWinRate.toFixed(1)}%`, detail: '손익분기 승률' },
+                ]
+
+                return metrics.map((item, i) => (
+                  <div key={i} className="flex justify-between items-center bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 hover:border-slate-300 transition-colors">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 block tracking-tight">{item.label}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.detail}</span>
+                    </div>
+                    <span className={`text-sm font-black ${item.color || 'text-slate-900'}`}>{item.value}</span>
+                  </div>
+                ))
+              })()}
             </div>
           </div>
         </div>

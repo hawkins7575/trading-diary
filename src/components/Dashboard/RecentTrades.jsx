@@ -37,7 +37,7 @@ export const RecentTrades = ({ trades }) => {
             {recentTrades.map(trade => {
               const entry = parseFloat(trade.entry || 0)
               const withdrawal = parseFloat(trade.withdrawal || 0)
-              const profit = withdrawal - entry
+              const profit = trade.profit || 0
               const isProfit = profit > 0
               const isLoss = profit < 0
               
@@ -73,7 +73,7 @@ export const RecentTrades = ({ trades }) => {
         {recentTrades.map(trade => {
           const entry = parseFloat(trade.entry || 0)
           const withdrawal = parseFloat(trade.withdrawal || 0)
-          const profit = withdrawal - entry
+          const profit = trade.profit || 0
           return (
             <div key={trade.id} className="p-5 hover:bg-slate-50 transition-colors">
               <div className="flex justify-between items-start mb-4">

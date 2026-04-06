@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getTrades, setTrades as setLocalTrades } from '@/utils/storage'
-import { calculateProfit } from '@/utils/calculations'
+import { recalculateProfits } from '@/utils/calculations'
 import { getSupabaseClient } from '@/services/supabase'
 import { getAuth } from '@/utils/storage'
 
@@ -9,6 +9,13 @@ export const useTrades = () => {
   const [loading, setLoading] = useState(true)
   const auth = getAuth()
   const isLoggedIn = auth?.isLoggedIn && auth?.authType === 'supabase'
+  
+  const updateTradesAndState = (newTrades) => {
+    const updated = recalculateProfits(newTrades)
+    setTradesState(updated)
+    setLocalTrades(updated)
+    return updated
+  }
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -23,11 +30,11 @@ export const useTrades = () => {
             .order('date', { ascending: true })
           
           if (error) throw error
-          setTradesState(data || [])
+          updateTradesAndState(data || [])
         } catch (error) {
           console.error('Error fetching trades from Supabase:', error)
           // Fallback to local if Supabase fails
-          setTradesState(getTrades())
+          updateTradesAndState(getTrades())
         }
       } else {
         const savedTrades = getTrades()
@@ -37,11 +44,10 @@ export const useTrades = () => {
             { id: 1, date: '2024-01-15', entry: 50000, withdrawal: 55000, balance: 105000, profit: 5000, memo: 'Demo Win', tags: ['계획대로_실행'], emotion: '확신' },
             { id: 2, date: '2024-01-16', entry: 20000, withdrawal: 18000, balance: 103000, profit: -2000, memo: 'Demo Loss', tags: ['손절_늦음'], emotion: '불안' }
           ]
-          setTradesState(sampleTrades)
-          setLocalTrades(sampleTrades)
+          updateTradesAndState(sampleTrades)
           localStorage.setItem('trading-diary-initialized', 'true')
         } else {
-          setTradesState(savedTrades)
+          updateTradesAndState(savedTrades)
         }
       }
       setLoading(false)
@@ -51,53 +57,40 @@ export const useTrades = () => {
   }, [isLoggedIn])
 
   const addTrade = async (trade) => {
-    const profit = calculateProfit(trade.entry, trade.withdrawal)
-    const newTrade = {
-      ...trade,
-      profit
-    }
-
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
         const { data, error } = await supabase
           .from('trades')
-          .insert([{ ...newTrade, user_id: auth.user.id }])
+          .insert([{ ...trade, user_id: auth.user.id }])
           .select()
         
         if (error) throw error
-        setTradesState([...trades, data[0]])
+        updateTradesAndState([...trades, data[0]])
       } catch (error) {
         console.error('Error adding trade to Supabase:', error)
       }
     } else {
-      const updatedTrades = [...trades, { ...newTrade, id: Date.now() }]
-      setTradesState(updatedTrades)
-      setLocalTrades(updatedTrades)
+      updateTradesAndState([...trades, { ...trade, id: Date.now() }])
     }
   }
 
   const updateTrade = async (id, updatedTrade) => {
-    const profit = calculateProfit(updatedTrade.entry, updatedTrade.withdrawal)
-    const finalUpdate = { ...updatedTrade, profit }
-
     if (isLoggedIn) {
       try {
         const supabase = getSupabaseClient()
         const { error } = await supabase
           .from('trades')
-          .update(finalUpdate)
+          .update(updatedTrade)
           .eq('id', id)
         
         if (error) throw error
-        setTradesState(trades.map(t => t.id === id ? { ...t, ...finalUpdate } : t))
+        updateTradesAndState(trades.map(t => t.id === id ? { ...t, ...updatedTrade } : t))
       } catch (error) {
         console.error('Error updating trade in Supabase:', error)
       }
     } else {
-      const updatedTrades = trades.map(t => t.id === id ? { ...t, ...finalUpdate } : t)
-      setTradesState(updatedTrades)
-      setLocalTrades(updatedTrades)
+      updateTradesAndState(trades.map(t => t.id === id ? { ...t, ...updatedTrade } : t))
     }
   }
 
@@ -111,15 +104,17 @@ export const useTrades = () => {
           .eq('id', id)
         
         if (error) throw error
-        setTradesState(trades.filter(t => t.id !== id))
+        updateTradesAndState(trades.filter(t => t.id !== id))
       } catch (error) {
         console.error('Error deleting trade from Supabase:', error)
       }
     } else {
-      const updatedTrades = trades.filter(t => t.id !== id)
-      setTradesState(updatedTrades)
-      setLocalTrades(updatedTrades)
+      updateTradesAndState(trades.filter(t => t.id !== id))
     }
+  }
+
+  const clearAllTrades = () => {
+    updateTradesAndState([])
   }
 
   return {
@@ -127,6 +122,7 @@ export const useTrades = () => {
     loading,
     addTrade,
     updateTrade,
-    deleteTrade
+    deleteTrade,
+    clearAllTrades
   }
 }

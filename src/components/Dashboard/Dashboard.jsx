@@ -29,6 +29,26 @@ export const Dashboard = ({ trades }) => {
   const maxWinStreak = getMaxWinStreak(trades)
   const averageProfit = calculateAverageProfit(trades)
 
+  // 수익률 계산 (시드 머니 대비)
+  const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const initialSeed = sortedTrades.length > 0 ? parseFloat(sortedTrades[0].seed || 0) : 0
+  
+  const totalProfitPercentage = initialSeed > 0 ? (totalProfit / initialSeed) * 100 : 0
+  const balanceROI = initialSeed > 0 ? ((currentBalance - initialSeed) / initialSeed) * 100 : 0
+
+  // 피크 수익/최대 손실율 계산
+  const findTradeRate = (targetProfit) => {
+    const trade = trades.find(t => t.profit === targetProfit)
+    if (!trade) return 0
+    const prevBalance = parseFloat(trade.balance) - (trade.profit || 0) - (parseFloat(trade.entry) || 0) + (parseFloat(trade.withdrawal) || 0)
+    const base = prevBalance || parseFloat(trade.seed || 0)
+    if (base === 0) return 0
+    return ((trade.profit || 0) / base) * 100
+  }
+
+  const maxProfitRate = findTradeRate(maxProfit)
+  const maxLossRate = findTradeRate(maxLoss)
+
   // Calculate trends (comparing last 5 trades to previous 5 for demo purposes)
   const calculateTrend = (data, count = 5) => {
     if (data.length < count * 2) return { trend: 'up', value: '0%' }
@@ -77,15 +97,15 @@ export const Dashboard = ({ trades }) => {
           title="총 자산 상세"
           value={formatCurrency(currentBalance)}
           subtitle="전체 시드 머니 합계"
-          trend="up"
-          trendValue="12.5%"
+          trend={balanceROI >= 0 ? 'up' : 'down'}
+          trendValue={formatPercentage(Math.abs(balanceROI))}
         />
         <MetricCard
           title="누적 순수익"
           value={formatCurrency(totalProfit)}
           subtitle={totalProfit >= 0 ? '전체 기간 흑자' : '전체 기간 적자'}
-          trend={profitTrend.trend}
-          trendValue={profitTrend.value}
+          trend={totalProfitPercentage >= 0 ? 'up' : 'down'}
+          trendValue={formatPercentage(Math.abs(totalProfitPercentage))}
           className={totalProfit >= 0 ? 'ring-1 ring-success/10' : 'ring-1 ring-danger/10'}
         />
         <MetricCard
@@ -106,11 +126,21 @@ export const Dashboard = ({ trades }) => {
       {/* 서브 메트릭 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
-          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">피크 수익</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">피크 수익</span>
+            <span className="text-[10px] font-black text-success bg-success/5 px-2 py-0.5 rounded-full border border-success/10">
+              +{maxProfitRate.toFixed(1)}%
+            </span>
+          </div>
           <span className="text-lg font-black text-success mt-1">{formatCurrency(maxProfit)}</span>
         </div>
         <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
-          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">최대 손실</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">최대 손실</span>
+            <span className="text-[10px] font-black text-danger bg-danger/5 px-2 py-0.5 rounded-full border border-danger/10">
+              {maxLossRate.toFixed(1)}%
+            </span>
+          </div>
           <span className="text-lg font-black text-danger mt-1">{formatCurrency(maxLoss)}</span>
         </div>
         <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">

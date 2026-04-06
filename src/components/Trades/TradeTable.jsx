@@ -23,7 +23,7 @@ export const TradeTable = ({ trades, onEdit, onDelete }) => {
               {trades.map(trade => {
                 const entry = parseFloat(trade.entry || 0)
                 const withdrawal = parseFloat(trade.withdrawal || 0)
-                const profit = withdrawal - entry
+                const profit = trade.profit || 0
                 const isProfit = profit > 0
                 const isLoss = profit < 0
                 
@@ -87,7 +87,7 @@ export const TradeTable = ({ trades, onEdit, onDelete }) => {
         {trades.map(trade => {
           const entry = parseFloat(trade.entry || 0)
           const withdrawal = parseFloat(trade.withdrawal || 0)
-          const profit = withdrawal - entry
+          const profit = trade.profit || 0
           return (
             <div key={trade.id} className="premium-card p-5 group">
               <div className="flex justify-between items-start mb-4">

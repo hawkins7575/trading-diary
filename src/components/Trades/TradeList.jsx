@@ -125,6 +125,7 @@ export const TradeList = ({ trades, onAddTrade, onUpdateTrade, onDeleteTrade, on
         onSubmit={handleFormSubmit}
         initialData={editingTrade}
         isEditing={!!editingTrade}
+        latestSeed={trades.length > 0 ? [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].seed : ''}
       />
 
       {/* 확인 모달 */}

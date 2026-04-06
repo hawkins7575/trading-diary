@@ -1,15 +1,30 @@
-export const calculateProfit = (entry, withdrawal) => {
-  const entryAmount = parseFloat(entry) || 0
-  const withdrawalAmount = parseFloat(withdrawal) || 0
-  return withdrawalAmount - entryAmount
+export const calculateProfit = (trade, prevBalance = 0) => {
+  const currentBalance = parseFloat(trade.balance || 0)
+  const entry = parseFloat(trade.entry || 0)
+  const withdrawal = parseFloat(trade.withdrawal || 0)
+  const baseBalance = prevBalance || parseFloat(trade.seed || 0)
+  
+  return currentBalance - (baseBalance + entry - withdrawal)
+}
+
+export const recalculateProfits = (trades) => {
+  if (!trades || trades.length === 0) return []
+  
+  // Sort by date
+  const sorted = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  return sorted.map((trade, index) => {
+    const prevBalance = index > 0 ? parseFloat(sorted[index - 1].balance || 0) : 0
+    const profit = calculateProfit(trade, prevBalance)
+    return { ...trade, profit }
+  })
 }
 
 export const calculateWinRate = (trades) => {
   if (!trades.length) return 0
   
   const profitTrades = trades.filter(trade => {
-    const profit = calculateProfit(trade.entry, trade.withdrawal)
-    return profit > 0
+    return (trade.profit || 0) > 0
   })
   
   return Math.round((profitTrades.length / trades.length) * 100)
@@ -17,7 +32,7 @@ export const calculateWinRate = (trades) => {
 
 export const calculateTotalProfit = (trades) => {
   return trades.reduce((total, trade) => {
-    return total + calculateProfit(trade.entry, trade.withdrawal)
+    return total + (trade.profit || 0)
   }, 0)
 }
 
@@ -62,17 +77,15 @@ export const formatPercentage = (value, decimals = 1) => {
 // 최고 수익 거래 찾기
 export const getMaxProfit = (trades) => {
   if (!trades.length) return 0
-  
-  const profits = trades.map(trade => calculateProfit(trade.entry, trade.withdrawal))
-  return Math.max(...profits)
+  const profits = trades.map(trade => trade.profit || 0).filter(p => p > 0)
+  return profits.length > 0 ? Math.max(...profits) : 0
 }
 
 // 최고 손실 거래 찾기
 export const getMaxLoss = (trades) => {
   if (!trades.length) return 0
-  
-  const profits = trades.map(trade => calculateProfit(trade.entry, trade.withdrawal))
-  return Math.min(...profits)
+  const losses = trades.map(trade => trade.profit || 0).filter(p => p < 0)
+  return losses.length > 0 ? Math.min(...losses) : 0
 }
 
 // 연승 횟수 계산
@@ -86,7 +99,7 @@ export const getMaxWinStreak = (trades) => {
   const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date))
   
   for (const trade of sortedTrades) {
-    const profit = calculateProfit(trade.entry, trade.withdrawal)
+    const profit = trade.profit || 0
     if (profit > 0) {
       currentStreak++
       maxStreak = Math.max(maxStreak, currentStreak)
@@ -109,7 +122,7 @@ export const getMaxLossStreak = (trades) => {
   const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date))
   
   for (const trade of sortedTrades) {
-    const profit = calculateProfit(trade.entry, trade.withdrawal)
+    const profit = trade.profit || 0
     if (profit < 0) {
       currentStreak++
       maxStreak = Math.max(maxStreak, currentStreak)
@@ -140,7 +153,7 @@ export const getMonthlyReturns = (trades) => {
       }
     }
     
-    const profit = calculateProfit(trade.entry, trade.withdrawal)
+    const profit = trade.profit || 0
     monthlyData[monthKey].profit += profit
     monthlyData[monthKey].trades++
     if (profit > 0) monthlyData[monthKey].wins++
@@ -159,7 +172,7 @@ export const getMonthlyReturns = (trades) => {
 export const getProfitDistribution = (trades) => {
   if (!trades.length) return { ranges: [], stats: {} }
   
-  const profits = trades.map(trade => calculateProfit(trade.entry, trade.withdrawal))
+  const profits = trades.map(trade => trade.profit || 0)
   const ranges = [
     { label: '-$500 이하', min: -Infinity, max: -500, count: 0 },
     { label: '-$500 ~ -$100', min: -500, max: -100, count: 0 },

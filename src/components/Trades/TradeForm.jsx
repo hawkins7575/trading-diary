@@ -7,13 +7,15 @@ export const TradeForm = ({
   onClose, 
   onSubmit, 
   initialData = null,
-  isEditing = false 
+  isEditing = false,
+  latestSeed = ''
 }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     entry: '',
     withdrawal: '',
     balance: '',
+    seed: latestSeed || '',
     memo: '',
     tags: [],
     checklist: {}
@@ -31,12 +33,13 @@ export const TradeForm = ({
         entry: '',
         withdrawal: '',
         balance: '',
+        seed: latestSeed || '',
         memo: '',
         tags: [],
         checklist: {}
       })
     }
-  }, [initialData, isOpen])
+  }, [initialData, isOpen, latestSeed])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -90,6 +93,16 @@ export const TradeForm = ({
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* 기본 정보 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">시드머니</label>
+                <input
+                  type="number"
+                  value={formData.seed}
+                  onChange={(e) => setFormData(prev => ({ ...prev, seed: e.target.value }))}
+                  className="form-input"
+                  placeholder="총 투자 원금"
+                />
+              </div>
               <div>
                 <label className="form-label">날짜 *</label>
                 <input

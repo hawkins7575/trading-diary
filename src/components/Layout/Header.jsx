@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { User, LogOut, Settings, FileText, Bell, Search, ChevronDown } from 'lucide-react'
 
-export const Header = ({ user, isLoggedIn, onLogin, onLogout, onNavigate }) => {
+export const Header = ({ user, isLoggedIn, onLogin, onLogout, onNavigate, onReset }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showLegalMenu, setShowLegalMenu] = useState(false)
 
@@ -116,12 +116,21 @@ export const Header = ({ user, isLoggedIn, onLogin, onLogout, onNavigate }) => {
               )}
             </div>
           ) : (
-            <button
-              onClick={onLogin}
-              className="btn-primary"
-            >
-              로그인
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onReset}
+                className="text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors"
+                title="애플리케이션 데이터를 초기화합니다"
+              >
+                데이터 초기화
+              </button>
+              <button
+                onClick={onLogin}
+                className="btn-primary"
+              >
+                로그인
+              </button>
+            </div>
           )}
         </div>
       </div>
