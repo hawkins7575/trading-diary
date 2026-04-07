@@ -42,33 +42,8 @@ export const useAuth = () => {
       const supabase = getSupabaseClient()
       
       if (!supabase) {
-        // 로컬 모드 로그인
-        console.warn('Supabase not available, using local authentication mode')
-        
-        const localUsers = JSON.parse(localStorage.getItem('trading-diary-local-users') || '{}')
-        
-        if (localUsers[email] && localUsers[email].password === password) {
-          const userData = {
-            id: email,
-            name: localUsers[email].name,
-            email: email,
-            avatar: '👤'
-          }
-          
-          setUser(userData)
-          setIsLoggedIn(true)
-          
-          setAuth({
-            isLoggedIn: true,
-            user: userData,
-            authType: 'local'
-          })
-          
-          return { success: true }
-        } else {
-          setError('이메일 또는 비밀번호가 올바르지 않습니다.')
-          return { success: false }
-        }
+        setError('로그인 서버에 연결할 수 없습니다. 설정을 확인해 보세요.')
+        return { success: false }
       }
 
       // Supabase 로그인
@@ -142,42 +117,8 @@ export const useAuth = () => {
       const supabase = getSupabaseClient()
       
       if (!supabase) {
-        // 로컬 모드 회원가입
-        console.warn('Supabase not available, using local registration mode')
-        
-        const localUsers = JSON.parse(localStorage.getItem('trading-diary-local-users') || '{}')
-        
-        if (localUsers[email]) {
-          setError('이미 존재하는 이메일입니다.')
-          return { success: false }
-        }
-
-        // 새 사용자 등록
-        localUsers[email] = {
-          name: email.split('@')[0],
-          password: password,
-          createdAt: Date.now()
-        }
-
-        localStorage.setItem('trading-diary-local-users', JSON.stringify(localUsers))
-
-        const userData = {
-          id: email,
-          name: email.split('@')[0],
-          email: email,
-          avatar: '👤'
-        }
-
-        setUser(userData)
-        setIsLoggedIn(true)
-        
-        setAuth({
-          isLoggedIn: true,
-          user: userData,
-          authType: 'local'
-        })
-
-        return { success: true, message: '회원가입이 완료되었습니다! (로컬 모드)' }
+        setError('회원가입 서버에 연결할 수 없습니다. 설정을 확인해 보세요.')
+        return { success: false }
       }
 
       // Supabase 회원가입

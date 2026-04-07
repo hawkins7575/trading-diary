@@ -16,7 +16,7 @@ export const useGoals = () => {
         try {
           const supabase = getSupabaseClient()
           if (!supabase) {
-            setGoalsState(getGoals())
+            setGoalsState([])
             setLoading(false)
             return
           }
@@ -27,10 +27,10 @@ export const useGoals = () => {
           setGoalsState(data || [])
         } catch (error) {
           console.error('Error fetching goals from Supabase:', error)
-          setGoalsState(getGoals())
+          setGoalsState([])
         }
       } else {
-        setGoalsState(getGoals())
+        setGoalsState([])
       }
       setLoading(false)
     }
@@ -39,98 +39,70 @@ export const useGoals = () => {
   }, [isLoggedIn])
 
   const addGoal = async (goal) => {
-    if (isLoggedIn) {
-      try {
-        const supabase = getSupabaseClient()
-        if (!supabase) {
-          console.warn('Supabase client not initialized, performing local operation')
-          const updatedGoals = [...goals, { ...goal, id: Date.now() }]
-          setGoalsState(updatedGoals)
-          setLocalGoals(updatedGoals)
-          return
-        }
-        
-        // 데이터 정제
-        const sanitizedGoal = {
-          ...goal,
-          user_id: auth.user.id,
-          targetAmount: parseFloat(goal.targetAmount) || 0,
-          targetWinRate: parseFloat(goal.targetWinRate) || 0
-        }
-
-        // 로컬 ID 제거
-        if (sanitizedGoal.id && typeof sanitizedGoal.id === 'number') {
-          delete sanitizedGoal.id
-        }
-
-        const { data, error } = await supabase
-          .from('goals')
-          .insert([sanitizedGoal])
-          .select()
-        if (error) throw error
-        setGoalsState([...goals, data[0]])
-      } catch (error) {
-        console.error('Error adding goal to Supabase:', error)
+    if (!isLoggedIn) return
+    
+    try {
+      const supabase = getSupabaseClient()
+      if (!supabase) return
+      
+      const sanitizedGoal = {
+        ...goal,
+        user_id: auth.user.id,
+        targetAmount: parseFloat(goal.targetAmount) || 0,
+        targetWinRate: parseFloat(goal.targetWinRate) || 0
       }
-    } else {
-      const updatedGoals = [...goals, { ...goal, id: Date.now() }]
-      setGoalsState(updatedGoals)
-      setLocalGoals(updatedGoals)
+
+      const { data, error } = await supabase
+        .from('goals')
+        .insert([sanitizedGoal])
+        .select()
+      if (error) throw error
+      setGoalsState([...goals, data[0]])
+    } catch (error) {
+      console.error('Error adding goal to Supabase:', error)
     }
   }
 
   const updateGoal = async (id, updatedGoal) => {
-    if (isLoggedIn) {
-      try {
-        const supabase = getSupabaseClient()
-        if (!supabase) {
-          console.warn('Supabase client not initialized, performing local operation')
-          const updatedGoals = goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g)
-          setGoalsState(updatedGoals)
-          setLocalGoals(updatedGoals)
-          return
-        }
-        const { error } = await supabase
-          .from('goals')
-          .update(updatedGoal)
-          .eq('id', id)
-        if (error) throw error
-        setGoalsState(goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g))
-      } catch (error) {
-        console.error('Error updating goal in Supabase:', error)
-      }
-    } else {
-      const updatedGoals = goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g)
-      setGoalsState(updatedGoals)
-      setLocalGoals(updatedGoals)
+    if (!isLoggedIn) return
+    
+    try {
+      const supabase = getSupabaseClient()
+      if (!supabase) return
+      
+      const { error } = await supabase
+        .from('goals')
+        .update(updatedGoal)
+        .eq('id', id)
+      if (error) throw error
+      setGoalsState(goals.map(g => g.id === id ? { ...g, ...updatedGoal } : g))
+    } catch (error) {
+      console.error('Error updating goal in Supabase:', error)
     }
   }
 
   const deleteGoal = async (id) => {
-    if (isLoggedIn) {
-      try {
-        const supabase = getSupabaseClient()
-        if (!supabase) {
-          console.warn('Supabase client not initialized, performing local operation')
-          const updatedGoals = goals.filter(g => g.id !== id)
-          setGoalsState(updatedGoals)
-          setLocalGoals(updatedGoals)
-          return
-        }
-        const { error } = await supabase
-          .from('goals')
-          .delete()
-          .eq('id', id)
-        if (error) throw error
-        setGoalsState(goals.filter(g => g.id !== id))
-      } catch (error) {
-        console.error('Error deleting goal from Supabase:', error)
-      }
-    } else {
-      const updatedGoals = goals.filter(g => g.id !== id)
-      setGoalsState(updatedGoals)
-      setLocalGoals(updatedGoals)
+    if (!isLoggedIn) return
+    
+    try {
+      const supabase = getSupabaseClient()
+      if (!supabase) return
+      
+      const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+      setGoalsState(goals.filter(g => g.id !== id))
+    } catch (error) {
+      console.error('Error deleting goal from Supabase:', error)
     }
+  }
+
+  const toggleGoalComplete = async (id) => {
+    const goal = goals.find(g => g.id === id)
+    if (!goal) return
+    await updateGoal(id, { completed: !goal.completed })
   }
 
   return {
@@ -138,6 +110,7 @@ export const useGoals = () => {
     loading,
     addGoal,
     updateGoal,
-    deleteGoal
+    deleteGoal,
+    toggleGoalComplete
   }
 }

@@ -7,17 +7,11 @@ export const initializeSupabase = () => {
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
   
   if (!supabaseUrl || !supabaseKey) {
-    console.error('Supabase credentials not found, using localStorage only')
-    console.log('Missing variables:', { 
-      URL: !!supabaseUrl, 
-      KEY: !!supabaseKey 
-    })
-    return null
+    throw new Error('Supabase credentials MISSING in .env file. Please check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
   }
   
   if (supabaseUrl.includes('your-project')) {
-    console.warn('Supabase URL is still set to placeholder "your-project". Please update .env.')
-    return null
+    throw new Error('Supabase URL is still set to placeholder "your-project". Please update .env.')
   }
   
   try {
@@ -26,7 +20,7 @@ export const initializeSupabase = () => {
     return supabaseClient
   } catch (error) {
     console.error('CRITICAL: Supabase client initialization failed:', error)
-    return null
+    throw error
   }
 }
 
