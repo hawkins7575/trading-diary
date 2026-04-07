@@ -7,12 +7,16 @@ export const initializeSupabase = () => {
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
   
   if (!supabaseUrl || !supabaseKey) {
-    console.warn('Supabase credentials not found, using localStorage only')
+    console.error('Supabase credentials not found, using localStorage only')
+    console.log('Missing variables:', { 
+      URL: !!supabaseUrl, 
+      KEY: !!supabaseKey 
+    })
     return null
   }
   
   if (supabaseUrl.includes('your-project')) {
-    console.warn('Supabase URL not configured, using localStorage only')
+    console.warn('Supabase URL is still set to placeholder "your-project". Please update .env.')
     return null
   }
   
@@ -21,7 +25,7 @@ export const initializeSupabase = () => {
     console.log('Supabase client initialized successfully')
     return supabaseClient
   } catch (error) {
-    console.error('Error initializing Supabase client:', error)
+    console.error('CRITICAL: Supabase client initialization failed:', error)
     return null
   }
 }
