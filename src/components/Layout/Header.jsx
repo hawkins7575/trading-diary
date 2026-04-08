@@ -45,19 +45,19 @@ export const Header = ({
   return (
     <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/60 shadow-sm transition-all duration-300 w-full max-w-full overflow-hidden">
       {/* Main Header Line */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 md:h-20">
-          <div className="flex items-center gap-4 lg:gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-14 md:h-20">
+          <div className="flex items-center gap-3 lg:gap-8">
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 active:scale-95 transition-all"
+              className="md:hidden p-1.5 rounded-xl text-slate-600 hover:bg-slate-100 active:scale-95 transition-all"
             >
-              <Menu size={22} strokeWidth={2.5} />
+              <Menu size={20} strokeWidth={2.5} />
             </button>
 
             {/* Title / Logo Placeholder for Mobile if needed */}
-            <h2 className="text-lg md:text-xl font-extrabold text-slate-800 tracking-tight transition-all truncate max-w-[150px] sm:max-w-none">
+            <h2 className="text-base md:text-xl font-extrabold text-slate-800 tracking-tight transition-all truncate max-w-[140px] sm:max-w-none">
               {activeTabLabel}
             </h2>
             
@@ -190,8 +190,8 @@ export const Header = ({
       </div>
 
       {/* Mobile Navigation Chips (Horizontal Scroll) */}
-      <div className="md:hidden border-t border-slate-50 bg-white/50 backdrop-blur-sm">
-        <div className="overflow-x-auto no-scrollbar flex items-center space-x-3 px-4 py-3 scroll-smooth">
+      <div className="md:hidden border-t border-slate-50 bg-white/50 backdrop-blur-sm overflow-hidden">
+        <div className="overflow-x-auto no-scrollbar flex items-center space-x-2 px-3 py-2.5 scroll-smooth">
           {tabItems.map((item) => {
             const isActive = activeTab === item.id
             const Icon = item.icon
@@ -200,24 +200,22 @@ export const Header = ({
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`
-                  flex items-center space-x-1.5 px-4 py-2 rounded-full whitespace-nowrap text-[13px] font-bold transition-all
+                  flex items-center space-x-1 px-3 py-1.5 rounded-full whitespace-nowrap text-[12px] font-bold transition-all
                   ${isActive 
-                    ? 'bg-primary text-white shadow-md shadow-primary/10 scale-105' 
+                    ? 'bg-primary text-white shadow-md shadow-primary/10' 
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                   }
                 `}
               >
-                <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={12} strokeWidth={isActive ? 2.5 : 2} />
                 <span>{item.mobileLabel}</span>
               </button>
             )
           })}
           {/* Spacer for ending padding */}
-          <div className="min-w-[16px]"></div>
+          <div className="min-w-[12px]"></div>
         </div>
       </div>
     </header>
   )
 }
-
-
