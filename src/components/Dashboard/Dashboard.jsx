@@ -124,7 +124,7 @@ export const Dashboard = ({ trades }) => {
       </div>
 
       {/* 서브 메트릭 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">피크 수익</span>

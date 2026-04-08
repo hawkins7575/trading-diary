@@ -88,7 +88,7 @@ export const RecentTrades = ({ trades }) => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-6 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 sm:gap-6">
                 <div>
                   <div className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">ENTRY</div>
                   <div className="text-xs font-bold text-slate-700">{formatCurrency(entry)}</div>

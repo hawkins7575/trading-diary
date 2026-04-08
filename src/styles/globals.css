@@ -51,7 +51,7 @@
   }
 
   .premium-card {
-    @apply bg-white rounded-xl border-2 border-slate-100 shadow-soft p-6 transition-all duration-300 hover:shadow-premium hover:border-slate-200;
+    @apply bg-white rounded-xl border-2 border-slate-100 shadow-soft p-3 md:p-6 transition-all duration-300 hover:shadow-premium hover:border-slate-200;
   }
 
   .sidebar-container {

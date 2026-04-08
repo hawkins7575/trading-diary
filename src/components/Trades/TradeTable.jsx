@@ -108,7 +108,7 @@ export const TradeTable = ({ trades, onEdit, onDelete }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">ENTRY</div>
                   <div className="text-xs font-bold text-slate-700">{formatCurrency(entry)}</div>

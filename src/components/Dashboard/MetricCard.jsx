@@ -18,7 +18,7 @@ export const MetricCard = ({ title, value, subtitle, trend, trendValue, classNam
         )}
       </div>
       <div className="mt-2">
-        <div className="text-2xl font-black text-slate-900 tracking-tight transition-transform group-hover:translate-x-1 duration-300">{value}</div>
+        <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight transition-transform group-hover:translate-x-1 duration-300 truncate">{value}</div>
       </div>
       {subtitle && (
         <p className="text-[11px] font-bold text-slate-800 mt-2 flex items-center">
