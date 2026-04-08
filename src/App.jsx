@@ -255,10 +255,13 @@ function App() {
         <Header 
           user={user}
           isLoggedIn={isLoggedIn}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           onLogin={handleLogin}
           onLogout={handleLogout}
           onNavigate={handleNavigate}
           onReset={handleClearAllData}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-8">

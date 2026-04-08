@@ -30,15 +30,7 @@ const supportItems = [
 export const Sidebar = ({ activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   return (
     <>
-      {/* Mobile menu button */}
-      {!isMobileMenuOpen && (
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="md:hidden fixed top-6 left-6 z-50 p-2 bg-white rounded-xl shadow-soft border border-slate-200"
-        >
-          <Menu size={20} className="text-slate-600" />
-        </button>
-      )}
+
 
       {/* Sidebar */}
       <aside className={`
