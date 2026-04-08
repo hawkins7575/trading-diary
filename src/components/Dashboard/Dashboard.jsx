@@ -8,13 +8,13 @@ import {
   calculateTotalProfit, 
   formatCurrency, 
   formatPercentage, 
-  getTradesByPeriod,
   getMaxProfit,
   getMaxLoss,
   getMaxWinStreak,
   calculateAverageProfit
 } from '@/utils/calculations'
 import { CHART_PERIODS } from '@/constants'
+import { ArrowRight, Activity, TrendingUp, Zap, Calendar } from 'lucide-react'
 
 export const Dashboard = ({ trades }) => {
   const [chartPeriod, setChartPeriod] = useState(CHART_PERIODS.DAILY)
@@ -49,24 +49,6 @@ export const Dashboard = ({ trades }) => {
   const maxProfitRate = findTradeRate(maxProfit)
   const maxLossRate = findTradeRate(maxLoss)
 
-  // Calculate trends (comparing last 5 trades to previous 5 for demo purposes)
-  const calculateTrend = (data, count = 5) => {
-    if (data.length < count * 2) return { trend: 'up', value: '0%' }
-    const recent = data.slice(-count)
-    const previous = data.slice(-count * 2, -count)
-    const recentAvg = recent.reduce((sum, t) => sum + (parseFloat(t.withdrawal) - parseFloat(t.entry) || 0), 0) / count
-    const previousAvg = previous.reduce((sum, t) => sum + (parseFloat(t.withdrawal) - parseFloat(t.entry) || 0), 0) / count
-    
-    if (previousAvg === 0) return { trend: 'up', value: '100%+' }
-    const change = ((recentAvg - previousAvg) / Math.abs(previousAvg)) * 100
-    return { 
-      trend: change >= 0 ? 'up' : 'down', 
-      value: `${Math.abs(change).toFixed(1)}%` 
-    }
-  }
-
-  const profitTrend = calculateTrend(trades)
-
   // 차트 데이터 생성
   const chartData = [...trades]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -90,9 +72,27 @@ export const Dashboard = ({ trades }) => {
   ]
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* 상단 메인 메트릭 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      {/* 히어로 환영 메시지 (트렌디 요소) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-2">
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">실시간 계정 분석 중</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">트레이딩 퍼포먼스</h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">당신의 매매 데이터를 바탕으로 도출된 핵심 통계입니다.</p>
+        </div>
+        <div className="flex space-x-2">
+           <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
+              <Calendar size={16} className="text-slate-400" />
+              <span className="text-xs font-bold text-slate-700">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</span>
+           </div>
+        </div>
+      </div>
+
+      {/* 상단 메인 메트릭 (Bento Grid Style) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <MetricCard
           title="총 자산 상세"
           value={formatCurrency(currentBalance)}
@@ -106,7 +106,6 @@ export const Dashboard = ({ trades }) => {
           subtitle={totalProfit >= 0 ? '전체 기간 흑자' : '전체 기간 적자'}
           trend={totalProfitPercentage >= 0 ? 'up' : 'down'}
           trendValue={formatPercentage(Math.abs(totalProfitPercentage))}
-          className={totalProfit >= 0 ? 'ring-1 ring-success/10' : 'ring-1 ring-danger/10'}
         />
         <MetricCard
           title="통계 승률"
@@ -119,89 +118,99 @@ export const Dashboard = ({ trades }) => {
           title="거래당 기댓값"
           value={formatCurrency(averageProfit)}
           subtitle="가중 평균 수익율"
-          className="bg-slate-50 border-dashed"
         />
       </div>
 
-      {/* 서브 메트릭 */}
+      {/* 서브 메트릭 (중간 강조 영역) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">피크 수익</span>
-            <span className="text-[10px] font-black text-success bg-success/5 px-2 py-0.5 rounded-full border border-success/10">
-              +{maxProfitRate.toFixed(1)}%
-            </span>
+        {[
+          { label: '최대 단일 이익', value: formatCurrency(maxProfit), rate: `+${maxProfitRate.toFixed(1)}%`, color: 'emerald', icon: <TrendingUp size={14}/> },
+          { label: '최대 단일 손실', value: formatCurrency(maxLoss), rate: `${maxLossRate.toFixed(1)}%`, color: 'rose', icon: <Zap size={14}/> },
+          { label: '최장 연속 승리', value: `${maxWinStreak}연승`, rate: 'Winning Streak', color: 'indigo', icon: <Activity size={14}/> },
+          { label: '전체 거래 데이터', value: `${totalTrades}건`, rate: 'Data Points', color: 'slate', icon: <Calendar size={14}/> }
+        ].map((item, i) => (
+          <div key={i} className="bg-white/60 backdrop-blur-sm p-5 rounded-3xl border border-white hover:border-primary/20 transition-all duration-300 group">
+            <div className="flex justify-between items-center mb-3">
+              <div className={`p-2 rounded-xl bg-${item.color}-50 text-${item.color}-600 group-hover:scale-110 transition-transform`}>
+                {item.icon}
+              </div>
+              <span className={`text-[10px] font-black text-${item.color}-600 bg-${item.color}-50 px-2 py-0.5 rounded-full`}>
+                {item.rate}
+              </span>
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>
+            <p className={`text-lg font-black mt-1 text-slate-900 group-hover:text-primary transition-colors`}>{item.value}</p>
           </div>
-          <span className="text-lg font-black text-success mt-1">{formatCurrency(maxProfit)}</span>
-        </div>
-        <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">최대 손실</span>
-            <span className="text-[10px] font-black text-danger bg-danger/5 px-2 py-0.5 rounded-full border border-danger/10">
-              {maxLossRate.toFixed(1)}%
-            </span>
-          </div>
-          <span className="text-lg font-black text-danger mt-1">{formatCurrency(maxLoss)}</span>
-        </div>
-        <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
-          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">런(Run) 승수</span>
-          <span className="text-lg font-black text-primary mt-1">{maxWinStreak} WIN</span>
-        </div>
-        <div className="bg-white/40 p-4 rounded-xl border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-colors">
-          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">기록 레코드</span>
-          <span className="text-lg font-black text-slate-900 mt-1">{totalTrades} DATAS</span>
-        </div>
+        ))}
       </div>
 
       {/* 메인 분석 영역 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 수익 추이 분석 */}
         <div className="lg:col-span-2">
-          <div className="premium-card h-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-premium p-6 md:p-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
               <div>
-                <h3 className="text-base font-black text-slate-800">퍼포먼스 아키텍처</h3>
-                <p className="text-xs text-slate-600 mt-1 font-bold">시간 경과에 따른 잔고 및 수익 가시성</p>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">수익 퍼포먼스 아키텍처</h3>
+                <p className="text-sm text-slate-500 font-bold mt-1">시간 경과에 따른 자산 변동성 및 수익 추이 분석</p>
               </div>
-              <div className="flex bg-slate-100 p-1 rounded-xl">
+              <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50">
                 {Object.values(CHART_PERIODS).map(period => (
                   <button
                     key={period}
                     onClick={() => setChartPeriod(period)}
-                    className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    className={`px-5 py-2 text-xs font-black rounded-xl transition-all duration-300 ${
                       chartPeriod === period
-                        ? 'bg-white text-primary shadow-soft'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'bg-white text-primary shadow-soft scale-105'
+                        : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
-                    {period === 'daily' ? '1D' : period === 'weekly' ? '1W' : '1M'}
+                    {period === 'daily' ? '일간' : period === 'weekly' ? '주간' : '월간'}
                   </button>
                 ))}
               </div>
             </div>
             
-            <div className="w-full h-[350px] lg:h-[400px]">
+            <div className="w-full h-[350px] lg:h-[450px]">
               <ProfitChart data={chartData} period={chartPeriod} isMobile={typeof window !== 'undefined' && window.innerWidth < 1024} />
             </div>
           </div>
         </div>
 
         {/* 상세 분석 리포트 */}
-        <div>
-          <CompactStats stats={compactStats} />
+        <div className="space-y-6">
+           <CompactStats stats={compactStats} />
+           
+           {/* 추가 인사이트 카드 (트렌디 요소) */}
+           <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                <TrendingUp size={120} />
+              </div>
+              <div className="relative z-10">
+                <Zap size={24} className="text-yellow-400 mb-4 animate-pulse" />
+                <h4 className="text-lg font-black mb-1">인공지능 분석 가이드</h4>
+                <p className="text-indigo-100 text-xs font-bold leading-relaxed mb-6 opacity-80">현재 데이터상 승률이 안정적입니다. 리스크 관리에 집중하며 현재 전략을 유지하세요.</p>
+                <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center space-x-2">
+                  <span>알고리즘 상세 분석</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+           </div>
         </div>
       </div>
 
-      {/* 하단 섹션: 실시간 기록 */}
-      <div className="space-y-4 pt-4 border-t border-slate-200/50">
-        <div className="flex justify-between items-center px-2">
+      {/* 하단 섹션: 실시간 분석 로그 */}
+      <div className="space-y-6 pt-10 border-t border-slate-100">
+        <div className="flex justify-between items-end px-2">
           <div>
-            <h3 className="text-lg font-black text-slate-800 tracking-tight">실시간 분석 로그</h3>
-            <p className="text-xs text-slate-700 mt-0.5 font-bold">최근 기록된 10개의 데이터 포인트</p>
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
+              Activity Logs
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">실시간 트레이딩 로그</h3>
           </div>
-          <button className="text-xs font-bold text-primary hover:underline flex items-center space-x-1">
+          <button className="text-[13px] font-black text-primary hover:bg-primary/5 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 group">
             <span>모든 데이터 보기</span>
-            <ChevronRight size={14} />
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
         <RecentTrades trades={trades} />
@@ -209,19 +218,3 @@ export const Dashboard = ({ trades }) => {
     </div>
   )
 }
-
-const ChevronRight = ({ size, className }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="m9 18 6-6-6-6" />
-  </svg>
-)
