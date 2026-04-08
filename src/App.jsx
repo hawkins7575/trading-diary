@@ -241,7 +241,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background w-full max-w-full">
       {currentPage === 'main' && (
         <Sidebar 
           activeTab={activeTab}
@@ -251,7 +251,7 @@ function App() {
         />
       )}
       
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Header 
           user={user}
           isLoggedIn={isLoggedIn}
@@ -264,8 +264,8 @@ function App() {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
+          <div className="max-w-7xl mx-auto w-full">
             {renderPageContent()}
           </div>
         </main>

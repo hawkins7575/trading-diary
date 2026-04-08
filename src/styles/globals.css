@@ -15,10 +15,16 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     margin: 0;
     padding: 0;
     color: #020617; /* Force dark color */
+    max-width: 100vw;
+  }
+
+  #root {
+    @apply overflow-x-hidden;
+    max-width: 100vw;
   }
 
   /* Smooth scrollbar for financial apps */

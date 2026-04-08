@@ -43,7 +43,7 @@ export const Header = ({
   const activeTabLabel = tabItems.find(item => item.id === activeTab)?.label || "통합 대시보드"
 
   return (
-    <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/60 shadow-sm transition-all duration-300">
+    <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/60 shadow-sm transition-all duration-300 w-full max-w-full overflow-hidden">
       {/* Main Header Line */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
