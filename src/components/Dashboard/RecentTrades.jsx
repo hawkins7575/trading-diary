@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/utils/calculations'
-import { ArrowUpRight, ArrowDownRight, History } from 'lucide-react'
+import { ArrowUpRight, ArrowDownRight, History, TrendingUp, Wallet } from 'lucide-react'
 
 export const RecentTrades = ({ trades }) => {
   if (trades.length === 0) {
@@ -78,8 +78,8 @@ export const RecentTrades = ({ trades }) => {
         </table>
       </div>
 
-      {/* 모바일 타임라인 카드 - 가독성 개선 가이드 반영 */}
-      <div className="md:hidden space-y-3 px-1">
+      {/* 모바일 타임라인 카드 - 계층 구조 및 가독성 전면 개선 */}
+      <div className="md:hidden space-y-4 px-1">
         {recentTrades.map((trade, i) => {
           const entry = parseFloat(trade.entry || 0)
           const withdrawal = parseFloat(trade.withdrawal || 0)
@@ -92,56 +92,60 @@ export const RecentTrades = ({ trades }) => {
           const yieldRate = base !== 0 ? ((trade.profit || 0) / base) * 100 : 0
 
           return (
-            <div key={trade.id} className="bg-white rounded-2xl p-4.5 border border-slate-100 shadow-soft transition-all duration-300 active:scale-[0.98]">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    isProfit ? 'bg-emerald-50 text-emerald-600' : isLoss ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400'
-                  }`}>
-                    {isProfit ? <ArrowUpRight size={18} strokeWidth={3}/> : <ArrowDownRight size={18} strokeWidth={3}/>}
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">DATE</p>
-                    <p className="text-[15px] font-black text-slate-900 leading-none">{trade.date}</p>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className={`text-[15px] font-black leading-none mb-1 ${
-                    isProfit ? 'text-emerald-600' : isLoss ? 'text-rose-600' : 'text-slate-900'
-                  }`}>
-                    {isProfit ? '+' : ''}{formatCurrency(profit)}
-                  </div>
-                  <div className={`inline-block px-1.5 py-0.5 rounded-lg text-[10px] font-black ${
-                    isProfit ? 'bg-emerald-50 text-emerald-600' : isLoss ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    {isProfit && '+'}{yieldRate.toFixed(2)}%
-                  </div>
-                </div>
-              </div>
+            <div key={trade.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-premium overflow-hidden transition-all duration-300">
+               {/* 카드 헤더: 날짜 */}
+               <div className="px-6 pt-5 pb-3 flex items-center space-x-2 border-b border-slate-50">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{trade.date}</span>
+               </div>
 
-              <div className="flex gap-2 mb-4">
-                <div className="flex-1 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
-                  <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Entry</p>
-                  <p className="text-[11px] font-bold text-slate-800">{formatCurrency(entry)}</p>
-                </div>
-                <div className="flex-1 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
-                  <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Exit</p>
-                  <p className="text-[11px] font-bold text-slate-800">{formatCurrency(withdrawal)}</p>
-                </div>
-              </div>
+               {/* 수익 데이터 영역 (강조) */}
+               <div className="px-8 py-5 bg-slate-50/30">
+                  <div className="flex justify-between items-end">
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center">
+                          <TrendingUp size={12} className="mr-1.5 text-slate-300" />
+                          Record P/L
+                        </p>
+                        <h3 className={`text-xl font-black tracking-tight leading-none ${
+                          isProfit ? 'text-emerald-500' : isLoss ? 'text-rose-500' : 'text-slate-900'
+                        }`}>
+                          {isProfit ? '+' : ''}{formatCurrency(profit)}
+                        </h3>
+                     </div>
+                     <div className={`px-2.5 py-1 rounded-xl text-[11px] font-black flex items-center space-x-1 ${
+                        isProfit ? 'bg-emerald-500 text-white' : isLoss ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {isProfit && <ArrowUpRight size={12} strokeWidth={3}/>}
+                        {isLoss && <ArrowDownRight size={12} strokeWidth={3}/>}
+                        <span>{isProfit && '+'}{yieldRate.toFixed(2)}%</span>
+                     </div>
+                  </div>
+               </div>
 
-              <div className="flex justify-between items-end pt-3 border-t border-dashed border-slate-200">
-                <div className="flex flex-col">
-                   <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5 tracking-tight">Financial Balance</p>
-                   <p className="text-lg font-black text-primary tracking-tight leading-none">{formatCurrency(parseFloat(trade.balance) || 0)}</p>
-                </div>
-                <div className="flex -space-x-1">
-                   {[1,2,3].map(dot => (
-                     <div key={dot} className="w-1.5 h-1.5 rounded-full bg-slate-200 border border-white"></div>
-                   ))}
-                </div>
-              </div>
+               {/* 잔액 영역 (최고 강조) */}
+               <div className="px-8 py-6">
+                  <div className="flex flex-col">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center">
+                       <Wallet size={12} className="mr-1.5 text-slate-300" />
+                       Total Balance
+                     </p>
+                     <span className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{formatCurrency(parseFloat(trade.balance) || 0)}</span>
+                  </div>
+               </div>
+
+               {/* 입출금 영역 (소극적 보조 데이터) */}
+               <div className="px-8 pb-7 flex items-center space-x-6">
+                 <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 opacity-60">In</span>
+                    <span className="text-[12px] font-bold text-slate-600 tabular-nums">{formatCurrency(entry)}</span>
+                 </div>
+                 <div className="w-px h-4 bg-slate-100"></div>
+                 <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 opacity-60">Out</span>
+                    <span className="text-[12px] font-bold text-slate-600 tabular-nums">{formatCurrency(withdrawal)}</span>
+                 </div>
+               </div>
             </div>
           )
         })}

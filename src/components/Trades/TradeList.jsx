@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2, History } from 'lucide-react'
 import { TradeForm } from './TradeForm'
 import { TradeTable } from './TradeTable'
 import { useConfirmModal, useAlertModal } from '@/hooks/useModal'
@@ -78,36 +78,53 @@ export const TradeList = ({ trades, onAddTrade, onUpdateTrade, onDeleteTrade, on
   }
 
   return (
-    <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">거래 내역</h2>
-        <div className="flex space-x-3">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+      {/* 헤더 섹션: 세련되고 컴팩트하게 개선 */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <History size={20} strokeWidth={2.5} />
+          </div>
+          <div>
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">거래 히스토리</h2>
+            <p className="text-xs text-slate-500 font-bold mt-0.5 uppercase tracking-widest leading-none">Trading Records</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
           <button
             onClick={() => setShowTradeForm(true)}
-            className="btn-primary flex items-center space-x-2"
+            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all"
           >
-            <Plus size={20} />
-            <span>새 거래</span>
+            <Plus size={18} strokeWidth={3} />
+            <span>새 거래 추가</span>
           </button>
+          
           <button
             onClick={handleClearAll}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="p-2.5 bg-white text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl border border-slate-100 transition-all active:scale-95 group"
+            title="모든 데이터 초기화"
           >
-            전체 삭제
+            <Trash2 size={18} strokeWidth={2.5} className="group-hover:animate-shake" />
           </button>
         </div>
       </div>
 
-      {/* 거래 목록 */}
+      {/* 거래 목록 섹션 */}
       {trades.length === 0 ? (
-        <div className="metric-card p-8 text-center">
-          <p className="text-gray-500 mb-4">아직 거래 내역이 없습니다</p>
+        <div className="bg-white rounded-[2.5rem] p-16 text-center border border-slate-100 shadow-premium">
+          <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-white">
+            <Plus size={40} className="text-slate-200" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">기록된 거래가 없습니다</h3>
+          <p className="text-sm text-slate-500 mt-2 font-medium mb-8 max-w-[240px] mx-auto leading-relaxed">
+            새로운 매매 기록을 추가하여 세밀한 수익 분석을 시작해 보세요.
+          </p>
           <button
             onClick={() => setShowTradeForm(true)}
-            className="btn-primary"
+            className="bg-primary text-white px-8 py-3 rounded-2xl font-black text-[15px] shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
           >
-            첫 거래 추가하기
+            첫 번째 거래 추가하기
           </button>
         </div>
       ) : (
