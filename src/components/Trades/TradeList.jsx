@@ -81,14 +81,8 @@ export const TradeList = ({ trades, onAddTrade, onUpdateTrade, onDeleteTrade, on
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
       {/* 헤더 섹션: 세련되고 컴팩트하게 개선 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-            <History size={20} strokeWidth={2.5} />
-          </div>
-          <div>
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">거래 히스토리</h2>
-            <p className="text-xs text-slate-500 font-bold mt-0.5 uppercase tracking-widest leading-none">Trading Records</p>
-          </div>
+        <div className="hidden sm:block">
+           {/* 공간 확보용 - 제목은 최상단 헤더에만 표시됨 */}
         </div>
         
         <div className="flex items-center space-x-2 w-full sm:w-auto">

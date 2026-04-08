@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Calendar, PenTool, Sparkles, Layout, Check, BookOpen } from 'lucide-react'
 
 const MOOD_OPTIONS = [
-  { value: 'excellent', label: '매우 좋음', color: 'text-green-600' },
-  { value: 'good', label: '좋음', color: 'text-blue-600' },
-  { value: 'neutral', label: '보통', color: 'text-gray-600' },
-  { value: 'bad', label: '나쁨', color: 'text-orange-600' },
-  { value: 'terrible', label: '매우 나쁨', color: 'text-red-600' }
+  { value: 'excellent', label: '최상', emoji: '🔥', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  { value: 'good', label: '좋음', emoji: '✨', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+  { value: 'neutral', label: '보통', emoji: '☁️', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200' },
+  { value: 'bad', label: '나쁨', emoji: '⚠️', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
+  { value: 'terrible', label: '주의', emoji: '🚫', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' }
 ]
 
 export const JournalForm = ({ 
@@ -19,7 +19,7 @@ export const JournalForm = ({
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     content: '',
-    mood: ''
+    mood: 'neutral'
   })
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export const JournalForm = ({
       setFormData({
         date: new Date().toISOString().split('T')[0],
         content: '',
-        mood: ''
+        mood: 'neutral'
       })
     }
   }, [initialData, isOpen])
@@ -49,86 +49,131 @@ export const JournalForm = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl m-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity" onClick={onClose} />
+      
+      <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+        {/* 장식용 배경 요소 */}
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+        
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-semibold">
-            {isEditing ? '일지 수정' : '새 일지 작성'}
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={24} />
+        <div className="flex items-center justify-between p-8 pb-4 relative z-10">
+          <div className="flex items-center space-x-3">
+             <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <BookOpen size={20} strokeWidth={2.5} />
+             </div>
+             <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                  {isEditing ? '일지 내용 수정' : '새로운 매매 인사이트 기록'}
+                </h3>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Perspective Entry Form</p>
+             </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all">
+            <X size={20} strokeWidth={3} />
           </button>
         </div>
 
         {/* 폼 */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* 날짜 */}
-          <div>
-            <label className="form-label">날짜</label>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              className="form-input"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 날짜 */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest ml-1 flex items-center">
+                 <Calendar size={12} className="mr-1.5" /> 기록 날짜 (Date)
+              </label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-sm font-black text-slate-900 focus:bg-white focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-400 transition-all outline-none"
+                required
+              />
+            </div>
 
-          {/* 기분 */}
-          <div>
-            <label className="form-label">오늘의 기분</label>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {MOOD_OPTIONS.map(mood => (
-                <button
-                  key={mood.value}
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, mood: mood.value }))}
-                  className={`p-3 text-sm rounded-lg border transition-colors ${
-                    formData.mood === mood.value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className={`font-medium ${mood.color}`}>
-                    {mood.label}
-                  </div>
-                </button>
-              ))}
+            {/* 기분 */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest ml-1 flex items-center">
+                 <Sparkles size={12} className="mr-1.5" /> 심리 상태 (Condition)
+              </label>
+              <div className="relative group">
+                 <select
+                   value={formData.mood}
+                   onChange={(e) => setFormData(prev => ({ ...prev, mood: e.target.value }))}
+                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-5 pr-10 text-sm font-black text-slate-900 focus:bg-white focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-400 transition-all outline-none appearance-none cursor-pointer"
+                 >
+                   {MOOD_OPTIONS.map(mood => (
+                     <option key={mood.value} value={mood.value}>
+                       {mood.emoji} {mood.label}
+                     </option>
+                   ))}
+                 </select>
+                 <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                    <Layout size={18} />
+                 </div>
+              </div>
             </div>
           </div>
 
+          {/* 기분 셀렉터 */}
+          <div className="grid grid-cols-5 gap-3">
+             {MOOD_OPTIONS.map(mood => (
+               <button
+                 key={mood.value}
+                 type="button"
+                 onClick={() => setFormData(prev => ({ ...prev, mood: mood.value }))}
+                 className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-300 group ${
+                   formData.mood === mood.value
+                     ? `${mood.border} ${mood.bg} scale-105 shadow-md`
+                     : 'border-transparent bg-slate-50 hover:bg-slate-100 grayscale opacity-70'
+                 }`}
+               >
+                 <span className={`text-xl mb-1.5 transition-transform ${formData.mood === mood.value ? 'scale-125' : 'group-hover:scale-110'}`}>{mood.emoji}</span>
+                 <span className={`text-[10px] font-black uppercase tracking-tighter ${formData.mood === mood.value ? mood.color : 'text-slate-500'}`}>{mood.label}</span>
+                 {formData.mood === mood.value && (
+                    <div className={`mt-2 w-1.5 h-1.5 rounded-full ${mood.color.replace('text-', 'bg-')} animate-pulse`}></div>
+                 )}
+               </button>
+             ))}
+          </div>
+
           {/* 내용 */}
-          <div>
-            <label className="form-label">일지 내용 *</label>
-            <textarea
-              value={formData.content}
-              onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-              className="form-textarea"
-              rows="8"
-              placeholder="오늘의 매매 경험, 느낀 점, 배운 점 등을 자유롭게 작성해주세요..."
-              required
-            />
-            <div className="text-sm text-gray-500 mt-1">
-              {formData.content.length}/1000자
+          <div className="space-y-2">
+            <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest ml-1 flex items-center">
+               <PenTool size={12} className="mr-1.5" /> 매매 복기 및 자기 성찰 (Insights)
+            </label>
+            <div className="relative group">
+              <textarea
+                value={formData.content}
+                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] py-6 px-7 text-base font-black text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-400 transition-all outline-none resize-none leading-relaxed"
+                rows="6"
+                placeholder="오늘의 매매 경험, 감정의 변화, 그리고 다음을 위한 레슨을 상세히 기록하세요..."
+                required
+              />
+              <div className="absolute bottom-6 right-8 flex items-center space-x-2">
+                 <span className={`text-[10px] font-black tracking-widest ${formData.content.length > 900 ? 'text-rose-500' : 'text-slate-400 uppercase'}`}>
+                   {formData.content.length} / 1000
+                 </span>
+              </div>
             </div>
           </div>
 
           {/* 버튼 */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex items-center space-x-3 pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
+              className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95"
             >
               취소
             </button>
             <button
               type="submit"
-              className="btn-primary"
+              className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center space-x-2"
             >
-              {isEditing ? '수정' : '저장'}
+              <Check size={18} strokeWidth={3} />
+              <span>{isEditing ? '기록 수정 완료' : '일지 저장하기'}</span>
             </button>
           </div>
         </form>

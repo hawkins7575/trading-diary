@@ -11,16 +11,17 @@ import {
   Zap, 
   Scale,
   ChevronRight,
-  Info
+  Info,
+  ShieldCheck
 } from 'lucide-react'
 import { StrategyForm } from './StrategyForm'
 import { useConfirmModal, useAlertModal } from '@/hooks/useModal'
 import { ConfirmModal, AlertModal } from '@/components/UI/Modal'
 
 const RISK_COLORS = {
-  low: 'bg-success/10 text-success border-success/20',
-  medium: 'bg-warning/10 text-warning border-warning/20',
-  high: 'bg-danger/10 text-danger border-danger/20'
+  low: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  medium: 'bg-amber-50 text-amber-600 border-amber-100',
+  high: 'bg-rose-50 text-rose-600 border-rose-100'
 }
 
 const RISK_LABELS = {
@@ -79,154 +80,125 @@ export const StrategyList = ({
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* 헤더 섹션 */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 pb-8">
-        <div>
-          <div className="flex items-center space-x-2 text-primary mb-1">
-            <Zap size={18} fill="currentColor" />
-            <span className="text-xs font-black uppercase tracking-widest">Global Strategies</span>
-          </div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">알고리즘 및 매매 전략고</h2>
-          <p className="text-slate-500 mt-2 text-sm max-w-2xl">
-            시장의 변동성에 대응하기 위해 검증된 전략을 관리하세요. 각 전략은 리스크 관리 및 진입/청산 로직을 포함합니다.
-          </p>
-        </div>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      {/* 헤더 섹션: 세련된 통일감 */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
+        <div className="hidden sm:block"></div>
+        
         <button
           onClick={() => setShowStrategyForm(true)}
-          className="btn-primary group flex items-center space-x-2 shadow-lg shadow-primary/20"
+          className="flex items-center justify-center space-x-2 bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-black text-sm shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all w-full sm:w-auto"
         >
-          <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-          <span>신규 전략 라이브러리 추가</span>
+          <Plus size={18} strokeWidth={3} />
+          <span>신규 전략 추가</span>
         </button>
       </div>
 
-      {/* 전략 목록 그리드 */}
+      {/* 전략 목록 */}
       {strategies.length === 0 ? (
-        <div className="premium-card py-20 text-center border-dashed border-2 bg-slate-50/50">
-          <div className="w-20 h-20 bg-white rounded-2xl shadow-soft flex items-center justify-center mx-auto mb-6">
-            <TrendingUp size={36} className="text-slate-300" />
+        <div className="bg-white rounded-[2.5rem] p-16 text-center border border-slate-100 shadow-premium mt-6">
+          <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-white">
+            <Zap size={40} className="text-slate-200" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800">활성화된 전략이 없습니다</h3>
-          <p className="text-slate-500 mb-8 text-sm">트레이딩 성과를 높이기 위해 나만의 매수/매도 원칙을 기록해 보세요.</p>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">활성화된 전략이 없습니다</h3>
+          <p className="text-sm text-slate-500 mt-2 font-medium mb-8 max-w-[240px] mx-auto leading-relaxed text-balance">
+            나만의 매수/매도 원칙을 기록하여 시장의 변동성에 현명하게 대응하세요.
+          </p>
           <button
             onClick={() => setShowStrategyForm(true)}
-            className="btn-outline border-slate-200"
+            className="bg-amber-500 text-white px-8 py-3 rounded-2xl font-black text-[15px] shadow-lg shadow-amber-100 hover:scale-105 active:scale-95 transition-all"
           >
-            첫 매매 전략 구축하기
+            첫 전략 구축하기
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           {strategies.map(strategy => (
-            <div key={strategy.id} className="premium-card group hover:scale-[1.01] transition-all duration-300">
-              {/* 카드 상단: 메타 정보 */}
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-black text-slate-900 group-hover:text-primary transition-colors">{strategy.name}</h3>
-                    <span className={`px-2 py-0.5 text-[10px] font-black border rounded-full uppercase tracking-tighter ${RISK_COLORS[strategy.riskLevel]}`}>
+            <div key={strategy.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-premium overflow-hidden transition-all duration-300 hover:border-amber-100/50 group flex flex-col">
+              {/* 상단: 기본 정보 */}
+              <div className="p-8 pb-4">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="space-y-3">
+                    <div className={`inline-flex items-center px-3 py-1 text-[10px] font-black rounded-lg border uppercase tracking-widest ${RISK_COLORS[strategy.riskLevel]}`}>
                       {RISK_LABELS[strategy.riskLevel]} 리스크
-                    </span>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight group-hover:text-amber-600 transition-colors">{strategy.name}</h3>
+                    <div className="flex items-center space-x-4 text-slate-400">
+                      {strategy.timeframe && (
+                        <div className="flex items-center space-x-1.5 text-[11px] font-bold">
+                          <Clock size={14} className="text-slate-300" />
+                          <span>Timeframe: {strategy.timeframe}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-4 text-slate-400">
-                    {strategy.timeframe && (
-                      <div className="flex items-center space-x-1.5 text-xs font-medium">
-                        <Clock size={14} />
-                        <span>타임프레임: {strategy.timeframe}</span>
+                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleEdit(strategy)} className="p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><Edit3 size={18} /></button>
+                    <button onClick={() => handleDelete(strategy.id)} className="p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={18} /></button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-4.5 text-[13px] font-medium text-slate-600 border border-slate-100/50 leading-relaxed italic mb-8">
+                  <Info size={16} className="inline mr-2 text-slate-400 -mt-0.5" />
+                  {strategy.description || '전략에 대한 설명이 비어 있습니다.'}
+                </div>
+              </div>
+
+              {/* 본문: 매매 로직 */}
+              <div className="px-8 pb-8 flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-3">
+                     <div className="flex items-center space-x-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 self-start px-2 py-0.5 rounded-lg w-fit">
+                        <TrendingUp size={12} />
+                        <span>Entry Logic</span>
                       </div>
-                    )}
+                      <div className="text-[13px] text-slate-600 font-medium leading-relaxed whitespace-pre-line p-5 rounded-[1.5rem] bg-slate-50/50 border border-slate-100/50 min-h-[100px]">
+                        {strategy.buyConditions || '진입 조건 미설정'}
+                      </div>
+                  </div>
+                  <div className="space-y-3">
+                     <div className="flex items-center space-x-2 text-[10px] font-black text-rose-600 uppercase tracking-widest bg-rose-50 self-start px-2 py-0.5 rounded-lg w-fit">
+                        <ArrowDownCircle size={12} />
+                        <span>Exit Logic</span>
+                      </div>
+                      <div className="text-[13px] text-slate-600 font-medium leading-relaxed whitespace-pre-line p-5 rounded-[1.5rem] bg-slate-50/50 border border-slate-100/50 min-h-[100px]">
+                        {strategy.sellConditions || '청산 조건 미설정'}
+                      </div>
                   </div>
                 </div>
-                <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleEdit(strategy)}
-                    className="p-2 text-slate-400 hover:text-primary transition-colors"
-                    title="전략 수정"
-                  >
-                    <Edit3 size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(strategy.id)}
-                    className="p-2 text-slate-400 hover:text-danger transition-colors"
-                    title="전략 삭제"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+
+                <div className="bg-white rounded-2xl border-2 border-slate-50 p-5 space-y-3">
+                    <div className="flex items-center space-x-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                       <ShieldAlert size={14} />
+                       <span>Risk Management Policy</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-slate-700 leading-relaxed">{strategy.riskManagement || '규칙 미설정'}</p>
                 </div>
               </div>
 
-              {/* 전략 요약 본문 */}
-              {strategy.description && (
-                <div className="bg-slate-50 rounded-xl p-4 mb-6 italic text-sm text-slate-600 border-l-4 border-slate-200">
-                  <Info size={16} className="inline mr-2 text-slate-400" />
-                  {strategy.description}
-                </div>
-              )}
-
-              {/* 기술적 로직 섹션 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-xs font-bold text-success uppercase tracking-wider">
-                      <TrendingUp size={14} />
-                      <span>ENTRY LOGIC (매수)</span>
-                    </div>
-                    <div className="text-xs text-slate-600 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 min-h-[80px]">
-                      {strategy.buyConditions || '진입 조건이 정의되지 않았습니다.'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-xs font-bold text-danger uppercase tracking-wider">
-                      <ArrowDownCircle size={14} />
-                      <span>EXIT LOGIC (매도)</span>
-                    </div>
-                    <div className="text-xs text-slate-600 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 min-h-[80px]">
-                      {strategy.sellConditions || '청산 조건이 정의되지 않았습니다.'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 리스크 관리 포인트 */}
-              <div className="mb-8 space-y-2">
-                <div className="flex items-center space-x-2 text-xs font-bold text-primary uppercase tracking-wider">
-                  <ShieldAlert size={14} />
-                  <span>RISK MANAGEMENT (리스크 관리)</span>
-                </div>
-                <div className="text-xs text-slate-600 whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-blue-100/50">
-                  {strategy.riskManagement || '자금 관리 규칙이 설정되지 않았습니다.'}
-                </div>
-              </div>
-
-              {/* 지표 하이라이트 (Footer) */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-100">
-                <div className="flex space-x-6">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Target ROI</span>
-                    <div className="flex items-center text-primary font-black">
-                      <Target size={14} className="mr-1" />
+              {/* 푸터: 퍼포먼스 타겟 */}
+              <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-6">
+                <div className="flex items-center space-x-8">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Target ROI</span>
+                    <div className="flex items-center text-emerald-600 font-black text-lg">
+                      <Target size={16} className="mr-1.5" />
                       <span>{strategy.targetReturn || '0%'}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col border-l border-slate-200 pl-6">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Max Drawdown</span>
-                    <div className="flex items-center text-slate-900 font-bold">
-                      <Scale size={14} className="mr-1 text-slate-400" />
+                  <div className="w-px h-8 bg-slate-200"></div>
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Max Drawdown</span>
+                    <div className="flex items-center text-slate-900 font-black text-lg">
+                      <Scale size={16} className="mr-1.5" />
                       <span>{strategy.maxDrawdown || '0%'}</span>
                     </div>
                   </div>
                 </div>
                 
-                <button 
-                  onClick={() => handleEdit(strategy)}
-                  className="flex items-center space-x-1 text-xs font-bold text-slate-400 hover:text-primary transition-colors pr-2"
-                >
-                  <span>세부 명세 보기</span>
-                  <ChevronRight size={14} />
+                <button className="text-xs font-black text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 group/btn">
+                  <span>Full Analytics</span>
+                  <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>

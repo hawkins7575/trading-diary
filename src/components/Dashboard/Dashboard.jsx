@@ -14,7 +14,7 @@ import {
   calculateAverageProfit
 } from '@/utils/calculations'
 import { CHART_PERIODS } from '@/constants'
-import { ArrowRight, Activity, TrendingUp, Zap, Calendar } from 'lucide-react'
+import { ArrowRight, Activity, TrendingUp, Zap, Calendar, LayoutDashboard } from 'lucide-react'
 
 export const Dashboard = ({ trades }) => {
   const [chartPeriod, setChartPeriod] = useState(CHART_PERIODS.DAILY)
@@ -72,21 +72,15 @@ export const Dashboard = ({ trades }) => {
   ]
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      {/* 히어로 환영 메시지 (트렌디 요소) */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-2">
-        <div>
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">실시간 계정 분석 중</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">트레이딩 퍼포먼스</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">당신의 매매 데이터를 바탕으로 도출된 핵심 통계입니다.</p>
-        </div>
-        <div className="flex space-x-2">
-           <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-              <Calendar size={16} className="text-slate-400" />
-              <span className="text-xs font-bold text-slate-700">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</span>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 px-2 lg:px-0">
+      {/* 헤더 섹션: 세련된 통일감 */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
+        <div className="hidden sm:block"></div>
+        
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+           <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-2 flex-1 sm:flex-none justify-center">
+              <Calendar size={14} className="text-slate-400" />
+              <span className="text-[11px] font-black text-slate-700">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</span>
            </div>
         </div>
       </div>
@@ -129,49 +123,49 @@ export const Dashboard = ({ trades }) => {
           { label: '최장 연속 승리', value: `${maxWinStreak}연승`, rate: 'Winning Streak', color: 'indigo', icon: <Activity size={14}/> },
           { label: '전체 거래 데이터', value: `${totalTrades}건`, rate: 'Data Points', color: 'slate', icon: <Calendar size={14}/> }
         ].map((item, i) => (
-          <div key={i} className="bg-white/60 backdrop-blur-sm p-5 rounded-3xl border border-white hover:border-primary/20 transition-all duration-300 group">
-            <div className="flex justify-between items-center mb-3">
-              <div className={`p-2 rounded-xl bg-${item.color}-50 text-${item.color}-600 group-hover:scale-110 transition-transform`}>
+          <div key={i} className="bg-white/60 backdrop-blur-sm p-6 rounded-[2rem] border border-white hover:border-primary/20 transition-all duration-300 group">
+            <div className="flex justify-between items-center mb-5">
+              <div className={`p-2.5 rounded-xl bg-${item.color}-50 text-${item.color}-600 group-hover:scale-110 transition-transform`}>
                 {item.icon}
               </div>
-              <span className={`text-[10px] font-black text-${item.color}-600 bg-${item.color}-50 px-2 py-0.5 rounded-full`}>
+              <span className={`text-[10px] font-black text-${item.color}-600 bg-${item.color}-50 px-2 py-0.5 rounded-lg`}>
                 {item.rate}
               </span>
             </div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>
-            <p className={`text-lg font-black mt-1 text-slate-900 group-hover:text-primary transition-colors`}>{item.value}</p>
+            <p className={`text-xl font-black mt-1 text-slate-900 group-hover:text-primary transition-colors tracking-tight`}>{item.value}</p>
           </div>
         ))}
       </div>
 
       {/* 메인 분석 영역 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-1 sm:px-0">
         {/* 수익 추이 분석 */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-premium p-6 md:p-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
               <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">수익 퍼포먼스 아키텍처</h3>
-                <p className="text-sm text-slate-500 font-bold mt-1">시간 경과에 따른 자산 변동성 및 수익 추이 분석</p>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-2">수익 퍼포먼스 아키텍처</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Growth Analytics</p>
               </div>
-              <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50">
+              <div className="flex bg-slate-100/60 p-1 rounded-2xl border border-slate-200/50 w-full sm:w-auto overflow-x-auto">
                 {Object.values(CHART_PERIODS).map(period => (
                   <button
                     key={period}
                     onClick={() => setChartPeriod(period)}
-                    className={`px-5 py-2 text-xs font-black rounded-xl transition-all duration-300 ${
+                    className={`flex-1 sm:flex-none px-5 py-2 text-[11px] font-black rounded-xl transition-all duration-300 ${
                       chartPeriod === period
                         ? 'bg-white text-primary shadow-soft scale-105'
-                        : 'text-slate-500 hover:text-slate-800'
+                        : 'text-slate-400 hover:text-slate-700'
                     }`}
                   >
-                    {period === 'daily' ? '일간' : period === 'weekly' ? '주간' : '월간'}
+                    {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
                   </button>
                 ))}
               </div>
             </div>
             
-            <div className="w-full h-[350px] lg:h-[450px]">
+            <div className="w-full h-[220px] lg:h-[450px]">
               <ProfitChart data={chartData} period={chartPeriod} isMobile={typeof window !== 'undefined' && window.innerWidth < 1024} />
             </div>
           </div>
@@ -182,17 +176,19 @@ export const Dashboard = ({ trades }) => {
            <CompactStats stats={compactStats} />
            
            {/* 추가 인사이트 카드 (트렌디 요소) */}
-           <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
-                <TrendingUp size={120} />
+           <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform duration-1000">
+                <LayoutDashboard size={160} />
               </div>
               <div className="relative z-10">
-                <Zap size={24} className="text-yellow-400 mb-4 animate-pulse" />
-                <h4 className="text-lg font-black mb-1">인공지능 분석 가이드</h4>
-                <p className="text-indigo-100 text-xs font-bold leading-relaxed mb-6 opacity-80">현재 데이터상 승률이 안정적입니다. 리스크 관리에 집중하며 현재 전략을 유지하세요.</p>
-                <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center space-x-2">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
+                   <Zap size={20} className="text-yellow-400 animate-pulse" />
+                </div>
+                <h4 className="text-xl font-black mb-2 tracking-tight">AI Insights</h4>
+                <p className="text-slate-400 text-xs font-bold leading-relaxed mb-8 opacity-80">현재 데이터상 승률이 안정적입니다. 리스크 관리에 집중하며 현재 전략을 유지하세요.</p>
+                <button className="w-full bg-white text-slate-900 px-5 py-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center space-x-2 active:scale-95">
                   <span>알고리즘 상세 분석</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={14} strokeWidth={3} />
                 </button>
               </div>
            </div>
@@ -201,16 +197,14 @@ export const Dashboard = ({ trades }) => {
 
       {/* 하단 섹션: 실시간 분석 로그 */}
       <div className="space-y-6 pt-10 border-t border-slate-100">
-        <div className="flex justify-between items-end px-2">
+        <div className="flex justify-between items-end px-4">
           <div>
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
-              Activity Logs
-            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Real-time Stats</p>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">실시간 트레이딩 로그</h3>
           </div>
-          <button className="text-[13px] font-black text-primary hover:bg-primary/5 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 group">
-            <span>모든 데이터 보기</span>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          <button className="text-[11px] font-black text-primary hover:bg-primary/5 px-4 py-2 rounded-xl transition-all flex items-center space-x-1 group">
+            <span>Details</span>
+            <ArrowRight size={14} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
         <RecentTrades trades={trades} />
